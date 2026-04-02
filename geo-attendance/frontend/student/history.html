@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance History — GeoAttend</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .history-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+    .chart-wrap { height: 240px; }
+    .calendar-strip {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 4px; margin-top: 8px;
+    }
+    .cal-day {
+      aspect-ratio: 1; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 600;
+      cursor: default;
+    }
+    .cal-day.present { background: rgba(45,198,83,0.20); color: var(--success); }
+    .cal-day.absent  { background: rgba(230,57,70,0.12);  color: var(--danger); opacity: 0.6; }
+    .cal-day.empty   { background: transparent; }
+    .cal-legend { display: flex; gap: 16px; margin-top: 10px; font-size: 0.78rem; color: var(--text-muted); }
+    .cal-legend span { display: flex; align-items: center; gap: 5px; }
+    .cal-legend .dot { width: 10px; height: 10px; border-radius: 3px; }
+    @media (max-width: 900px) { .history-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+
+<div class="page-wrapper">
+  <div class="container">
+    <div class="page-header">
+      <h2>📅 Attendance History</h2>
+      <p>Your complete attendance record</p>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px">
+      <div class="stat-card teal">
+        <div class="stat-label">Total Present</div>
+        <div class="stat-value" id="totalPresent">—</div>
+        <div class="stat-icon">✅</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Total Records</div>
+        <div class="stat-value" id="totalRecords">—</div>
+        <div class="stat-icon">📋</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Attendance %</div>
+        <div class="stat-value" id="attendancePct">—</div>
+        <div class="stat-icon">🎯</div>
+      </div>
+    </div>
+
+    <div class="history-grid">
+      <!-- Chart + Calendar -->
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><span class="card-title">📊 Monthly Trend</span></div>
+          <div class="chart-wrap">
+            <canvas id="monthChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📆 Last 30 Days</span></div>
+          <div class="calendar-strip" id="calStrip"></div>
+          <div class="cal-legend">
+            <span><div class="dot" style="background:rgba(45,198,83,0.3)"></div> Present</span>
+            <span><div class="dot" style="background:rgba(230,57,70,0.15)"></div> Absent</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 All Records</span>
+          <input type="text" id="searchDate" class="form-control" 
+                 placeholder="Filter by date..." 
+                 style="width:180px; font-size:0.85rem; padding:7px 12px"
+                 oninput="filterRecords()" />
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Distance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyTable">
+              <tr><td colspan="6" class="text-center text-muted" style="padding:28px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="../assets/js/main.js"></script>
+<script>
+  document.getElementById('navbar-placeholder').innerHTML = buildNavbar('STUDENT');
+  document.getElementById('footer-placeholder').innerHTML = buildFooter();
+  if (!initPage('STUDENT')) throw '';
+
+  let allRecords = [];
+
+  async function loadHistory() {
+    const res = await api.get('/student/attendance/history');
+    if (!res.ok) return;
+
+    const d = res.data;
+    allRecords = d.records || [];
+
+    document.getElementById('totalPresent').textContent  = d.totalPresent;
+    document.getElementById('totalRecords').textContent  = d.totalRecords;
+    const pct = d.totalRecords > 0 ? Math.round(d.totalPresent * 100 / d.totalRecords) : 0;
+    document.getElementById('attendancePct').textContent = pct + '%';
+
+    renderTable(allRecords);
+    buildCalendar(allRecords);
+    buildChart(allRecords);
+  }
+
+  function filterRecords() {
+    const q = document.getElementById('searchDate').value.toLowerCase();
+    const filtered = q ? allRecords.filter(r => r.date.includes(q)) : allRecords;
+    renderTable(filtered);
+  }
+
+  function renderTable(records) {
+    const tbody = document.getElementById('historyTable');
+    if (!records.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:28px">No records found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = records.map((r, i) => {
+      const day = new Date(r.date).toLocaleDateString('en-IN', { weekday: 'short' });
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${UI.formatDate(r.date)}</td>
+        <td>${day}</td>
+        <td>${UI.formatTime(r.time)}</td>
+        <td>${r.distance || 0} m</td>
+        <td>${UI.badgeStatus(r.status)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function buildCalendar(records) {
+    const presentSet = new Set(records.filter(r => r.status === 'present').map(r => r.date));
+    const strip = document.getElementById('calStrip');
+    const cells = [];
+
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayNum  = d.getDate();
+      const isPresent = presentSet.has(dateStr);
+      const cls = isPresent ? 'present' : 'absent';
+      cells.push(`<div class="cal-day ${cls}" title="${dateStr}">${dayNum}</div>`);
+    }
+    strip.innerHTML = cells.join('');
+  }
+
+  function buildChart(records) {
+    // Group by month
+    const monthMap = {};
+    records.forEach(r => {
+      const m = r.date.substring(0, 7);
+      if (!monthMap[m]) monthMap[m] = 0;
+      if (r.status === 'present') monthMap[m]++;
+    });
+
+    const labels = Object.keys(monthMap).sort().slice(-6);
+    const vals   = labels.map(l => monthMap[l]);
+
+    const ctx = document.getElementById('monthChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.map(l => {
+          const [y, m] = l.split('-');
+          return new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+        }),
+        datasets: [{
+          label: 'Present Days',
+          data: vals,
+          borderColor: '#00c9a7',
+          backgroundColor: 'rgba(0,201,167,0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#00c9a7',
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f4f8' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  loadHistory();
+</script>
+</body>
+</html>

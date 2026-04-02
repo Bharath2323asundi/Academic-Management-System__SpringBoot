@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard — GeoAttend</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, #1f8adb 100%);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      color: #fff;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    .welcome-banner::after {
+      content: '📍';
+      position: absolute;
+      right: 28px;
+      font-size: 5rem;
+      opacity: 0.12;
+    }
+    .welcome-banner h3 { font-size: 1.5rem; margin-bottom: 6px; }
+    .welcome-banner p  { font-size: 0.92rem; opacity: 0.82; }
+    .today-status {
+      background: rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+    .pct-ring-wrap { display: flex; align-items: center; justify-content: center; }
+    .chart-container { height: 200px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .recent-table { margin-top: 24px; }
+    @media (max-width: 768px) { 
+      .grid-2 { grid-template-columns: 1fr; }
+      .welcome-banner { flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+
+<div class="page-wrapper">
+  <div class="container">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+      <div>
+        <h3>Welcome back, <span id="studentName">—</span>!</h3>
+        <p id="dateString">Today is —</p>
+        <p style="margin-top:6px;font-size:0.82rem;opacity:0.7">Student ID: <strong id="studentIdDisplay">—</strong></p>
+      </div>
+      <div class="today-status" id="todayStatus">⏳ Checking...</div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-grid">
+      <div class="stat-card teal">
+        <div class="stat-label">Total Present</div>
+        <div class="stat-value" id="totalPresent">—</div>
+        <div class="stat-icon">✅</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Attendance %</div>
+        <div class="stat-value" id="attendancePct">—</div>
+        <div class="stat-icon">📊</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Today's Status</div>
+        <div class="stat-value" id="todayStatusCard" style="font-size:1.6rem">—</div>
+        <div class="stat-icon">📅</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">📊 Attendance Rate</span></div>
+        <div class="pct-ring-wrap">
+          <div class="chart-container" style="width:200px">
+            <canvas id="pctChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">📅 Recent Attendance</span></div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Date</th><th>Time</th><th>Status</th></tr>
+            </thead>
+            <tbody id="recentTable">
+              <tr><td colspan="3" class="text-center text-muted">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card" style="margin-top:24px">
+      <div class="card-header"><span class="card-title">⚡ Quick Actions</span></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a href="mark-attendance.html" class="btn btn-accent btn-lg">📍 Mark Today's Attendance</a>
+        <a href="history.html" class="btn btn-outline btn-lg">📋 View Full History</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="../assets/js/main.js"></script>
+<script>
+  document.getElementById('navbar-placeholder').innerHTML = buildNavbar('STUDENT');
+  document.getElementById('footer-placeholder').innerHTML = buildFooter();
+  if (!initPage('STUDENT')) throw '';
+
+  const user = Auth.getUser();
+  document.getElementById('studentName').textContent = user.name || '';
+  document.getElementById('studentIdDisplay').textContent = user.studentId || '';
+  document.getElementById('dateString').textContent = 'Today is ' + new Date().toLocaleDateString('en-IN', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+
+  async function loadDashboard() {
+    // Load profile
+    const profRes = await api.get('/student/profile');
+    if (profRes.ok) {
+      const p = profRes.data;
+      document.getElementById('totalPresent').textContent = p.totalPresent;
+      document.getElementById('attendancePct').textContent = p.attendancePercentage + '%';
+
+      const pct = p.attendancePercentage;
+      const ctx = document.getElementById('pctChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Present', 'Absent'],
+          datasets: [{
+            data: [pct, 100 - pct],
+            backgroundColor: ['#00c9a7', '#e2e8f0'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          }
+        },
+        plugins: [{
+          id: 'center',
+          beforeDraw(chart) {
+            const { width, height, ctx } = chart;
+            ctx.restore();
+            ctx.font = `bold 26px Syne, sans-serif`;
+            ctx.fillStyle = '#1a1f36';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${pct}%`, width/2, height/2 - 8);
+            ctx.font = '12px DM Sans, sans-serif';
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('attendance', width/2, height/2 + 14);
+            ctx.save();
+          }
+        }]
+      });
+    }
+
+    // Today's status
+    const todayRes = await api.get('/student/attendance/today');
+    if (todayRes.ok) {
+      const t = todayRes.data;
+      if (t.marked) {
+        document.getElementById('todayStatus').innerHTML = `✅ Present — ${UI.formatTime(t.time)}`;
+        document.getElementById('todayStatusCard').textContent = '✅';
+      } else {
+        document.getElementById('todayStatus').innerHTML = '❌ Not Marked Yet';
+        document.getElementById('todayStatusCard').textContent = '❌';
+      }
+    }
+
+    // Recent records
+    const histRes = await api.get('/student/attendance/history');
+    if (histRes.ok) {
+      const recent = (histRes.data.records || []).slice(0, 7);
+      const tbody = document.getElementById('recentTable');
+      if (!recent.length) {
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">No records yet</td></tr>`;
+      } else {
+        tbody.innerHTML = recent.map(r => `
+          <tr>
+            <td>${UI.formatDate(r.date)}</td>
+            <td>${UI.formatTime(r.time)}</td>
+            <td>${UI.badgeStatus(r.status)}</td>
+          </tr>`).join('');
+      }
+    }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

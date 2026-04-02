@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — GeoAttend</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .chart-container { position: relative; height: 280px; }
+    .today-section { margin-top: 28px; }
+    .date-filter { display: flex; align-items: center; gap: 12px; }
+    .date-filter input[type="date"] {
+      padding: 8px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem; cursor: pointer; outline: none; color: var(--text);
+    }
+    .date-filter input:focus { border-color: var(--primary); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+
+<div class="page-wrapper">
+  <div class="container">
+    <div class="page-header">
+      <h2>📊 Admin Dashboard</h2>
+      <p>Real-time attendance overview and statistics</p>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-grid" id="statsGrid">
+      <div class="stat-card blue">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value" id="totalStudents">—</div>
+        <div class="stat-icon">👥</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Present Today</div>
+        <div class="stat-value" id="presentToday">—</div>
+        <div class="stat-icon">✅</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Absent Today</div>
+        <div class="stat-value" id="absentToday">—</div>
+        <div class="stat-icon">❌</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Pending Approvals</div>
+        <div class="stat-value" id="pendingApprovals">—</div>
+        <div class="stat-icon">⏳</div>
+      </div>
+    </div>
+
+    <!-- Charts + Today's table -->
+    <div class="grid-2">
+      <!-- Chart -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📈 Last 7 Days Attendance</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="attendanceChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Percentage Donut -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎯 Today's Rate</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="donutChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date-wise Attendance -->
+    <div class="card today-section">
+      <div class="card-header">
+        <span class="card-title">📋 Attendance Records</span>
+        <div class="date-filter">
+          <input type="date" id="dateFilter" />
+          <button class="btn btn-primary btn-sm" onclick="loadAttendanceByDate()">Filter</button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Student Name</th>
+              <th>Student ID</th>
+              <th>Time</th>
+              <th>Distance (m)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTable">
+            <tr><td colspan="6" class="text-center text-muted" style="padding:28px">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="../assets/js/main.js"></script>
+<script>
+  document.getElementById('navbar-placeholder').innerHTML = buildNavbar('ADMIN');
+  document.getElementById('footer-placeholder').innerHTML = buildFooter();
+  if (!initPage('ADMIN')) throw '';
+
+  let barChart, donutChart;
+
+  async function loadDashboard() {
+    const res = await api.get('/admin/dashboard');
+    if (!res.ok) return;
+    const d = res.data;
+
+    document.getElementById('totalStudents').textContent = d.totalStudents;
+    document.getElementById('presentToday').textContent  = d.presentToday;
+    document.getElementById('absentToday').textContent   = d.absentToday;
+    document.getElementById('pendingApprovals').textContent = d.pendingApprovals;
+
+    // Bar Chart
+    const labels = d.chartData.map(x => x.date);
+    const vals   = d.chartData.map(x => x.present);
+
+    if (barChart) barChart.destroy();
+    const ctx1 = document.getElementById('attendanceChart').getContext('2d');
+    barChart = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Present',
+          data: vals,
+          backgroundColor: 'rgba(15,76,129,0.75)',
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f4f8' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Donut Chart
+    const total   = +d.totalStudents || 1;
+    const present = +d.presentToday;
+    const absent  = Math.max(total - present, 0);
+    const pct     = Math.round(present * 100 / total);
+
+    if (donutChart) donutChart.destroy();
+    const ctx2 = document.getElementById('donutChart').getContext('2d');
+    donutChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+          data: [present, absent],
+          backgroundColor: ['#2dc653', '#e63946'],
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed*100/total)}%)`
+          }},
+        }
+      },
+      plugins: [{
+        id: 'centerText',
+        beforeDraw(chart) {
+          const { width, height, ctx } = chart;
+          ctx.restore();
+          ctx.font = `bold 28px Syne, sans-serif`;
+          ctx.fillStyle = '#1a1f36';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${pct}%`, width/2, height/2 - 10);
+          ctx.font = '12px DM Sans, sans-serif';
+          ctx.fillStyle = '#6b7280';
+          ctx.fillText('attendance', width/2, height/2 + 16);
+          ctx.save();
+        }
+      }]
+    });
+  }
+
+  async function loadAttendanceByDate() {
+    const date = document.getElementById('dateFilter').value;
+    if (!date) return loadTodayAttendance();
+    const res = await api.get(`/admin/attendance/date/${date}`);
+    renderAttendanceTable(res.ok ? res.data : []);
+  }
+
+  async function loadTodayAttendance() {
+    const res = await api.get('/admin/attendance/today');
+    renderAttendanceTable(res.ok ? res.data : []);
+  }
+
+  function renderAttendanceTable(records) {
+    const tbody = document.getElementById('attendanceTable');
+    if (!records.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:28px">No attendance records found</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = records.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${r.studentName}</strong></td>
+        <td><code>${r.studentId}</code></td>
+        <td>${UI.formatTime(r.time)}</td>
+        <td>${r.distance || 0} m</td>
+        <td>${UI.badgeStatus(r.status)}</td>
+      </tr>`).join('');
+  }
+
+  // Set today's date in filter
+  document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+
+  loadDashboard();
+  loadTodayAttendance();
+</script>
+</body>
+</html>

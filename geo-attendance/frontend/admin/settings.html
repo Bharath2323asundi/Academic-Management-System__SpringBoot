@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — GeoAttend</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
+    .info-box {
+      background: rgba(15,76,129,0.06); border-radius: 10px;
+      padding: 16px 18px; margin-bottom: 20px;
+      border-left: 4px solid var(--primary); font-size: 0.88rem; color: var(--text-muted);
+    }
+    .info-box strong { color: var(--primary); }
+    .coord-row { display: flex; gap: 12px; }
+    .coord-row .form-group { flex: 1; margin-bottom: 0; }
+    .current-location-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px; background: var(--accent);
+      color: #fff; border: none; border-radius: 8px;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      width: 100%; justify-content: center; margin-top: 12px;
+      font-family: 'DM Sans', sans-serif; transition: background 0.18s;
+    }
+    .current-location-btn:hover { background: var(--accent-light); }
+    .radius-visual {
+      display: flex; align-items: center; gap: 12px; margin-top: 8px;
+    }
+    .radius-bar {
+      flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+    .radius-fill {
+      height: 100%; background: linear-gradient(to right, var(--primary), var(--accent));
+      border-radius: 3px; transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+
+<div class="page-wrapper">
+  <div class="container">
+    <div class="page-header">
+      <h2>⚙️ System Settings</h2>
+      <p>Configure geo-fence location, radius, and attendance time window</p>
+    </div>
+
+    <div id="alertBox" class="alert hidden"></div>
+
+    <div class="settings-grid">
+
+      <!-- Geo-Fence Settings -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📍 Geo-Fence Location</span>
+        </div>
+
+        <div class="info-box">
+          Set the <strong>center location</strong> for attendance. Students must be within the defined radius to mark attendance.
+        </div>
+
+        <div class="coord-row mb-3">
+          <div class="form-group">
+            <label class="form-label">Latitude</label>
+            <input type="number" id="latitude" class="form-control" placeholder="e.g. 13.0827" step="0.0001" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Longitude</label>
+            <input type="number" id="longitude" class="form-control" placeholder="e.g. 80.2707" step="0.0001" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Radius (meters)</label>
+          <input type="number" id="radius" class="form-control" placeholder="e.g. 100" min="10" max="10000"
+                 oninput="updateRadiusBar(this.value)" />
+          <div class="radius-visual">
+            <span style="font-size:0.8rem;color:var(--text-muted);width:30px" id="radiusLabel">0m</span>
+            <div class="radius-bar"><div class="radius-fill" id="radiusFill" style="width:0%"></div></div>
+            <span style="font-size:0.8rem;color:var(--text-muted)">10km</span>
+          </div>
+        </div>
+
+        <button class="current-location-btn" onclick="useMyLocation()">
+          📡 Use My Current Location
+        </button>
+      </div>
+
+      <!-- Time Window Settings -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🕐 Attendance Time Window</span>
+        </div>
+
+        <div class="info-box">
+          Students can only mark attendance <strong>within this time range</strong>. Submissions outside this window will be rejected.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Start Time</label>
+          <input type="time" id="startTime" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">End Time</label>
+          <input type="time" id="endTime" class="form-control" />
+        </div>
+
+        <div class="info-box mt-3" id="timePreview">
+          Students can mark attendance from <strong>—</strong> to <strong>—</strong>
+        </div>
+
+        <div class="form-group mt-3">
+          <label class="form-label">Quick Presets</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="setTimePreset('09:00','17:00')">9AM–5PM</button>
+            <button class="btn btn-outline btn-sm" onclick="setTimePreset('08:00','18:00')">8AM–6PM</button>
+            <button class="btn btn-outline btn-sm" onclick="setTimePreset('00:00','23:59')">All Day</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Network Fencing Settings -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <div class="card-header">
+          <span class="card-title">🌐 Network Fencing (IP Whitelist)</span>
+        </div>
+
+        <div class="info-box">
+          Restrict attendance marking to devices connected to specific <strong>campus Wi-Fi networks</strong>. Enter a comma-separated list of allowed IP prefixes (e.g. <code>192.168.1., 10.0.0.</code>). Leave blank to disable this feature.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Allowed IPs</label>
+          <input type="text" id="allowedIps" class="form-control" placeholder="192.168.1., 10., 127.0.0.1" />
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;text-align:right">
+      <button class="btn btn-primary btn-lg" id="saveBtn" onclick="saveSettings()">
+        💾 Save All Settings
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="footer-placeholder"></div>
+
+<script src="../assets/js/main.js"></script>
+<script>
+  document.getElementById('navbar-placeholder').innerHTML = buildNavbar('ADMIN');
+  document.getElementById('footer-placeholder').innerHTML = buildFooter();
+  if (!initPage('ADMIN')) throw '';
+
+  // Load settings
+  async function loadSettings() {
+    const res = await api.get('/admin/settings');
+    if (!res.ok) return;
+    const s = res.data;
+    document.getElementById('latitude').value  = s.latitude  || '';
+    document.getElementById('longitude').value = s.longitude || '';
+    document.getElementById('radius').value    = s.radius    || 100;
+    document.getElementById('startTime').value = s.start_time ? s.start_time.substring(0,5) : '09:00';
+    document.getElementById('endTime').value   = s.end_time  ? s.end_time.substring(0,5)   : '17:00';
+    document.getElementById('allowedIps').value = s.allowed_ips || '';
+    updateRadiusBar(s.radius || 100);
+    updateTimePreview();
+  }
+
+  function updateRadiusBar(val) {
+    const pct = Math.min((val / 10000) * 100, 100);
+    document.getElementById('radiusFill').style.width = pct + '%';
+    document.getElementById('radiusLabel').textContent = val + 'm';
+  }
+
+  function updateTimePreview() {
+    const s = document.getElementById('startTime').value;
+    const e = document.getElementById('endTime').value;
+    document.getElementById('timePreview').innerHTML =
+      `Students can mark attendance from <strong>${UI.formatTime(s+':00')}</strong> to <strong>${UI.formatTime(e+':00')}</strong>`;
+  }
+
+  document.getElementById('startTime').addEventListener('change', updateTimePreview);
+  document.getElementById('endTime').addEventListener('change', updateTimePreview);
+
+  function setTimePreset(start, end) {
+    document.getElementById('startTime').value = start;
+    document.getElementById('endTime').value   = end;
+    updateTimePreview();
+  }
+
+  async function useMyLocation() {
+    try {
+      const pos = await Geo.getPosition();
+      document.getElementById('latitude').value  = pos.coords.latitude.toFixed(6);
+      document.getElementById('longitude').value = pos.coords.longitude.toFixed(6);
+      UI.showAlert(document.getElementById('alertBox'), '📡 Location fetched successfully!', 'success');
+    } catch (e) {
+      UI.showAlert(document.getElementById('alertBox'), 'Could not get location: ' + e.message, 'danger');
+    }
+  }
+
+  async function saveSettings() {
+    const alertBox = document.getElementById('alertBox');
+    const btn = document.getElementById('saveBtn');
+    UI.setLoading(btn, true);
+
+    const payload = {
+      latitude:   document.getElementById('latitude').value,
+      longitude:  document.getElementById('longitude').value,
+      radius:     document.getElementById('radius').value,
+      start_time: document.getElementById('startTime').value + ':00',
+      end_time:   document.getElementById('endTime').value   + ':00',
+      allowed_ips: document.getElementById('allowedIps').value
+    };
+
+    if (!payload.latitude || !payload.longitude || !payload.radius) {
+      UI.showAlert(alertBox, 'Please fill all location fields', 'danger');
+      UI.setLoading(btn, false);
+      return;
+    }
+
+    const res = await api.put('/admin/settings', payload);
+    UI.setLoading(btn, false);
+    if (res.ok) {
+      UI.showAlert(alertBox, '✅ Settings saved successfully!', 'success');
+    } else {
+      UI.showAlert(alertBox, res.data.message || 'Failed to save settings', 'danger');
+    }
+  }
+
+  loadSettings();
+</script>
+</body>
+</html>

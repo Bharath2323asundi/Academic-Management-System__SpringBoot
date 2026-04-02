@@ -1,0 +1,5 @@
+com\geoattendance\model\Attendance$AttendanceStatus.class
+com\geoattendance\model\Attendance.class
+com\geoattendance\model\Student$StudentStatus.class
+com\geoattendance\model\Student.class
+com\geoattendance\repository\AttendanceRepository.class

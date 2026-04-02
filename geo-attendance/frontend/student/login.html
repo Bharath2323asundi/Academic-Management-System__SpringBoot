@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Portal — GeoAttend</title>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    .reg-form { display: none; }
+    .reg-form.active { display: block; }
+    .login-form.active { display: block; }
+    .login-form { display: none; }
+    .role-badge {
+      display: inline-block; background: rgba(0,201,167,0.12);
+      color: var(--accent); font-size: 0.78rem; font-weight: 700;
+      padding: 3px 12px; border-radius: 20px; letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .status-pending {
+      background: rgba(244,162,97,0.12); border-radius: 8px;
+      padding: 14px; font-size: 0.88rem; color: #8a5030;
+      border-left: 4px solid var(--warning); margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🎓</div>
+      <span class="role-badge">Student Portal</span>
+      <h1>GeoAttend</h1>
+      <p>Geo-Fencing Attendance System</p>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="showTab('login', this)">Login</div>
+      <div class="auth-tab" onclick="showTab('register', this)">Register</div>
+    </div>
+
+    <div id="alert" class="alert hidden"></div>
+
+    <!-- Login Form -->
+    <form id="loginForm" class="login-form active" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="your@email.com" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="loginPassword" class="form-control" placeholder="Your password" required />
+      </div>
+      <button type="submit" id="loginBtn" class="btn btn-accent btn-full btn-lg mt-3">
+        🔐 Login
+      </button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="registerForm" class="reg-form" onsubmit="handleRegister(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="regName" class="form-control" placeholder="John Doe" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Student ID</label>
+          <input type="text" id="regStudentId" class="form-control" placeholder="STU001 or ABC123" required
+                 pattern="^[a-zA-Z0-9]+$" title="Letters and numbers only" />
+          <small style="color:var(--text-muted);font-size:0.78rem">Letters, numbers, or both (e.g. STU001, ABC, 12345)</small>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="regEmail" class="form-control" placeholder="your@email.com" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" id="regPhone" class="form-control" placeholder="9876543210" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="regPassword" class="form-control" placeholder="Min 6 chars" minlength="6" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input type="password" id="regConfirm" class="form-control" placeholder="Repeat password" required />
+        </div>
+      </div>
+      <button type="submit" id="registerBtn" class="btn btn-accent btn-full btn-lg mt-2">
+        📝 Register
+      </button>
+    </form>
+
+    <div class="auth-footer-link mt-3">
+      <a href="../admin/login.html">Admin? Login here →</a>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script>
+  if (Auth.getToken() && Auth.getRole() === 'STUDENT') {
+    window.location.href = 'dashboard.html';
+  }
+
+  function showTab(tab, el) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('loginForm').classList.toggle('login-form', true);
+    document.getElementById('registerForm').classList.toggle('reg-form', true);
+    if (tab === 'login') {
+      document.getElementById('loginForm').classList.add('active');
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('registerForm').style.display = 'none';
+    } else {
+      document.getElementById('registerForm').style.display = 'block';
+      document.getElementById('loginForm').style.display = 'none';
+    }
+    UI.hideAlert(document.getElementById('alert'));
+  }
+  // init
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('registerForm').style.display = 'none';
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const alertEl = document.getElementById('alert');
+    UI.hideAlert(alertEl);
+    UI.setLoading(btn, true);
+
+    const res = await api.post('/auth/student/login', {
+      email:    document.getElementById('loginEmail').value.trim(),
+      password: document.getElementById('loginPassword').value
+    });
+
+    UI.setLoading(btn, false);
+    if (res.ok) {
+      Auth.setSession(res.data);
+      window.location.href = 'dashboard.html';
+    } else {
+      UI.showAlert(alertEl, res.data.message || 'Login failed', 'danger');
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('registerBtn');
+    const alertEl = document.getElementById('alert');
+    UI.hideAlert(alertEl);
+
+    const password = document.getElementById('regPassword').value;
+    const confirm  = document.getElementById('regConfirm').value;
+
+    if (password !== confirm) {
+      UI.showAlert(alertEl, 'Passwords do not match', 'danger'); return;
+    }
+
+    const studentId = document.getElementById('regStudentId').value.trim();
+    if (!/^[a-zA-Z0-9]+$/.test(studentId)) {
+      UI.showAlert(alertEl, 'Student ID must contain only letters and/or numbers', 'danger'); return;
+    }
+
+    UI.setLoading(btn, true);
+    const res = await api.post('/auth/student/register', {
+      name:      document.getElementById('regName').value.trim(),
+      email:     document.getElementById('regEmail').value.trim(),
+      studentId: studentId,
+      phone:     document.getElementById('regPhone').value.trim(),
+      password
+    });
+
+    UI.setLoading(btn, false);
+    if (res.ok) {
+      UI.showAlert(alertEl,
+        '✅ Registered successfully! Please wait for admin approval before logging in.', 'success');
+      document.getElementById('registerForm').reset();
+    } else {
+      UI.showAlert(alertEl, res.data.message || 'Registration failed', 'danger');
+    }
+  }
+</script>
+</body>
+</html>
