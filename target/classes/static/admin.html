@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Geo-Attendance</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+</head>
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <nav class="navbar">
+            <div class="logo">
+                <span class="gradient-text">Admin Portal</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Admin</span>
+                <button onclick="app.logout()" class="btn btn-logout">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-3" id="stats-container" style="margin-bottom: 2rem;">
+            <div class="glass-card" style="padding: 1.5rem;">
+                <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Total Teachers</p>
+                <h2 id="stat-teachers" style="font-size: 2rem;">0</h2>
+            </div>
+            <div class="glass-card" style="padding: 1.5rem;">
+                <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Total Students</p>
+                <h2 id="stat-students" style="font-size: 2rem;">0</h2>
+            </div>
+            <div class="glass-card" style="padding: 1.5rem;">
+                <p style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Total Attendance Marked</p>
+                <h2 id="stat-attendance" style="font-size: 2rem;">0</h2>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <!-- Teachers List -->
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Manage Teachers</h2>
+                    <button onclick="loadTeachers()" class="btn btn-secondary btn-sm">Refresh</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <th style="padding: 1rem 0;">Name</th>
+                                <th style="padding: 1rem 0;">Email</th>
+                                <th style="padding: 1rem 0;">Status</th>
+                                <th style="padding: 1rem 0; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teachers-table">
+                            <!-- Rows loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Key Generator -->
+            <div class="glass-card" style="height: fit-content;">
+                <h2>Generate Access Key</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Create a unique key for new teachers to register.</p>
+                
+                <div id="key-display" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 12px; font-family: monospace; font-size: 1.2rem; margin-bottom: 1rem; text-align: center; border: 1px dashed var(--primary); display: none;">
+                    <!-- Key here -->
+                </div>
+
+                <button id="btn-gen-key" class="btn btn-primary" style="width: 100%;">Generate New Key</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!app.user || !app.user.roles.includes('ROLE_ADMIN')) {
+                window.location.href = 'auth.html';
+            }
+            loadStats();
+            loadTeachers();
+
+            document.getElementById('btn-gen-key').onclick = async () => {
+                const res = await app.request('/admin/generate-key');
+                const display = document.getElementById('key-display');
+                display.innerText = res.key;
+                display.style.display = 'block';
+                app.showToast('New Key Generated!');
+            };
+        });
+
+        async function loadStats() {
+            try {
+                const stats = await app.request('/admin/stats');
+                document.getElementById('stat-teachers').innerText = stats.teachers;
+                document.getElementById('stat-students').innerText = stats.students;
+                document.getElementById('stat-attendance').innerText = stats.attendanceCount;
+            } catch (err) {}
+        }
+
+        async function loadTeachers() {
+            const table = document.getElementById('teachers-table');
+            table.innerHTML = '<tr><td colspan="4" style="padding: 2rem; text-align: center;">Loading teachers...</td></tr>';
+
+            try {
+                const teachers = await app.request('/admin/teachers');
+                table.innerHTML = '';
+
+                teachers.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--glass-border)';
+                    tr.innerHTML = `
+                        <td style="padding: 1rem 0;">${t.user.name}</td>
+                        <td style="padding: 1rem 0;">${t.user.email}</td>
+                        <td style="padding: 1rem 0;">
+                            <span class="badge ${t.active ? 'badge-success' : 'badge-danger'}">
+                                ${t.active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem 0; text-align: right;">
+                            <button onclick="toggleTeacher(${t.id})" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                ${t.active ? 'Deactivate' : 'Activate'}
+                            </button>
+                        </td>
+                    `;
+                    table.appendChild(tr);
+                });
+            } catch (err) {}
+        }
+
+        async function toggleTeacher(id) {
+            try {
+                await app.request(`/admin/teachers/${id}/toggle`, { method: 'POST' });
+                app.showToast('Status Updated');
+                loadTeachers();
+            } catch (err) {}
+        }
+    </script>
+</body>
+</html>

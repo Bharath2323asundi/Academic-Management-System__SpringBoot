@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth | Geo-Attendance</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+</head>
+
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container" style="max-width: 500px; padding-top: 10vh;">
+        <div class="logo" style="justify-content: center; margin-bottom: 2rem;">
+            <a href="index.html" style="text-decoration: none;"><span class="gradient-text">GeoAttend</span></a>
+        </div>
+
+        <div class="glass-card">
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                <button class="btn" id="login-tab" style="background: none; flex: 1; border-bottom: 2px solid var(--primary);">Login</button>
+                <button class="btn" id="register-tab" style="background: none; flex: 1;">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" required placeholder="name@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <span>Login</span>
+                    <div class="loader" id="login-loader"></div>
+                </button>
+            </form>
+
+            <!-- Register Form (Hidden by default) -->
+            <form id="register-form" style="display: none;">
+                <div class="input-group">
+                    <label>Select Role</label>
+                    <select id="reg-role" required>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="reg-name" required placeholder="John Doe">
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="reg-email" required placeholder="john@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" required placeholder="••••••••">
+                </div>
+
+                <!-- Teacher Specific -->
+                <div id="teacher-fields" style="display: none;">
+                    <div class="input-group">
+                        <label>Access Key (from Admin)</label>
+                        <input type="text" id="reg-access-key" placeholder="TCH-XXXXX">
+                    </div>
+                </div>
+
+                <!-- Student Specific -->
+                <div id="student-fields">
+                    <div class="input-group">
+                        <label>VTU Register Number</label>
+                        <input type="text" id="reg-vtu" placeholder="1XY20CS001">
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="input-group">
+                            <label>Branch</label>
+                            <input type="text" id="reg-branch" placeholder="CSE">
+                        </div>
+                        <div class="input-group">
+                            <label>Semester</label>
+                            <input type="number" id="reg-sem" placeholder="6">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <span>Register</span>
+                    <div class="loader" id="reg-loader"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginTab = document.getElementById('login-tab');
+            const regTab = document.getElementById('register-tab');
+            const loginForm = document.getElementById('login-form');
+            const regForm = document.getElementById('register-form');
+            const roleSelect = document.getElementById('reg-role');
+            const teacherFields = document.getElementById('teacher-fields');
+            const studentFields = document.getElementById('student-fields');
+
+            // Tab Switching
+            loginTab.onclick = () => {
+                loginTab.style.borderBottom = '2px solid var(--primary)';
+                regTab.style.borderBottom = 'none';
+                loginForm.style.display = 'block';
+                regForm.style.display = 'none';
+            };
+
+            regTab.onclick = () => {
+                regTab.style.borderBottom = '2px solid var(--primary)';
+                loginTab.style.borderBottom = 'none';
+                regForm.style.display = 'block';
+                loginForm.style.display = 'none';
+            };
+
+            // Role Specific Fields
+            roleSelect.onchange = () => {
+                if (roleSelect.value === 'teacher') {
+                    teacherFields.style.display = 'block';
+                    studentFields.style.display = 'none';
+                } else {
+                    teacherFields.style.display = 'none';
+                    studentFields.style.display = 'block';
+                }
+            };
+
+            // Login Logic
+            loginForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const loader = document.getElementById('login-loader');
+                loader.style.display = 'inline-block';
+
+                try {
+                    const res = await app.request('/auth/signin', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            email: document.getElementById('login-email').value,
+                            password: document.getElementById('login-password').value
+                        })
+                    });
+
+                    app.saveAuth(res, res.token);
+                    app.showToast('Login Successful!');
+
+                    // Redirect based on role
+                    if (res.roles.includes('ROLE_ADMIN')) window.location.href = 'admin.html';
+                    else if (res.roles.includes('ROLE_TEACHER')) window.location.href = 'teacher.html';
+                    else window.location.href = 'student.html';
+                } catch (err) {
+                    // Toast handled by app.request
+                } finally {
+                    loader.style.display = 'none';
+                }
+            };
+
+            // Registration Logic
+            regForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const loader = document.getElementById('reg-loader');
+                loader.style.display = 'inline-block';
+
+                const payload = {
+                    name: document.getElementById('reg-name').value,
+                    email: document.getElementById('reg-email').value,
+                    password: document.getElementById('reg-password').value,
+                    role: roleSelect.value
+                };
+
+                if (payload.role === 'teacher') {
+                    payload.accessKey = document.getElementById('reg-access-key').value;
+                } else {
+                    payload.vtuNo = document.getElementById('reg-vtu').value;
+                    payload.branch = document.getElementById('reg-branch').value;
+                    payload.semester = document.getElementById('reg-sem').value;
+                }
+
+                try {
+                    await app.request('/auth/signup', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    app.showToast('Registration Successful! Please login.');
+                    loginTab.click();
+                } catch (err) { }
+                finally { loader.style.display = 'none'; }
+            };
+        });
+    </script>
+</body>
+</html>

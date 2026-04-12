@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo-Attendance | Network-Based Management</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+</head>
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <nav class="navbar">
+            <div class="logo">
+                <span class="gradient-text">GeoAttend</span>
+            </div>
+            <div id="nav-links">
+                <a href="auth.html" class="btn btn-primary">Get Started</a>
+            </div>
+        </nav>
+
+        <main style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+            <h1 style="font-size: 4rem; margin-bottom: 1rem;">Network-Based <br><span class="gradient-text">Attendance System</span></h1>
+            <p style="color: var(--text-muted); max-width: 600px; margin-bottom: 2rem; font-size: 1.2rem;">
+                Secure hotspot geo-fencing ensures students are physically present in the classroom. 
+                Encrypted QR session tokens for high-integrity attendance records.
+            </p>
+            <div style="display: flex; gap: 1rem;">
+                <a href="auth.html?role=student" class="btn btn-secondary">Student Access</a>
+                <a href="auth.html?role=teacher" class="btn btn-secondary">Teacher Portal</a>
+            </div>
+        </main>
+
+        <section class="grid grid-3" style="margin-top: 5rem;">
+            <div class="glass-card">
+                <h3>IP Geo-Fencing</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Validates connection via Teacher's Mobile Hotspot (192.168.43.x).</p>
+            </div>
+            <div class="glass-card">
+                <h3>QR Dynamics</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Unique QR codes generated per session with 10-minute validity.</p>
+            </div>
+            <div class="glass-card">
+                <h3>JWT Security</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Encrypted role-based access control with secure token authentication.</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="toast">Message goes here</div>
+</body>
+</html>

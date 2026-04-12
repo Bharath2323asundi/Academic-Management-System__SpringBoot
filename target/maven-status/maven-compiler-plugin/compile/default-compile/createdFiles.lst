@@ -1,0 +1,3 @@
+com\attendance\entity\User.class
+com\attendance\dto\LoginRequest.class
+com\attendance\entity\Role.class
