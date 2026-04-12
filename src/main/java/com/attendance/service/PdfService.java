@@ -16,6 +16,10 @@ import java.util.List;
 public class PdfService {
 
     public byte[] generateAttendanceReport(Session session, List<Attendance> attendanceList) throws IOException {
+        return generateGeneralReport("Attendance Report", session.getSubject(), session.getTeacher().getUser().getName(), session.getStartTime().toLocalDate().toString(), attendanceList);
+    }
+
+    public byte[] generateGeneralReport(String title, String subject, String teacherName, String date, List<Attendance> attendanceList) throws IOException {
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage();
             document.addPage(page);
@@ -26,14 +30,16 @@ public class PdfService {
                 contentStream.setLeading(20f);
                 contentStream.newLineAtOffset(50, 750);
                 
-                contentStream.showText("Attendance Report");
+                contentStream.showText(title);
                 contentStream.newLine();
                 contentStream.setFont(PDType1Font.HELVETICA, 12);
-                contentStream.showText("Subject: " + session.getSubject());
+                if (subject != null) {
+                    contentStream.showText("Subject: " + subject);
+                    contentStream.newLine();
+                }
+                contentStream.showText("Teacher: " + teacherName);
                 contentStream.newLine();
-                contentStream.showText("Teacher: " + session.getTeacher().getUser().getName());
-                contentStream.newLine();
-                contentStream.showText("Date: " + session.getStartTime().toLocalDate());
+                contentStream.showText("Date: " + date);
                 contentStream.newLine();
                 contentStream.showText("-----------------------------------------------------------------------");
                 contentStream.newLine();

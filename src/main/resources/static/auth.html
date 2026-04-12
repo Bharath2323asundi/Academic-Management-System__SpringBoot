@@ -78,6 +78,10 @@
                         <label>VTU Register Number</label>
                         <input type="text" id="reg-vtu" placeholder="1XY20CS001">
                     </div>
+                    <div class="input-group">
+                        <label>Teacher Access Key (Enter Your Teacher's Key)</label>
+                        <input type="text" id="reg-student-access-key" placeholder="TCH-XXXXX">
+                    </div>
                     <div class="grid grid-2">
                         <div class="input-group">
                             <label>Branch</label>
@@ -184,6 +188,7 @@
                     payload.vtuNo = document.getElementById('reg-vtu').value;
                     payload.branch = document.getElementById('reg-branch').value;
                     payload.semester = document.getElementById('reg-sem').value;
+                    payload.accessKey = document.getElementById('reg-student-access-key').value;
                 }
 
                 try {

@@ -29,4 +29,7 @@ public class Student {
 
     @Column(name = "is_approved", nullable = false)
     private boolean isApproved = false;
+
+    @Column(name = "teacher_access_key", nullable = false)
+    private String teacherAccessKey;
 }

@@ -51,7 +51,19 @@
                         <span style="display: block; font-size: 0.8rem; color: var(--accent); text-transform: uppercase;">Students Present</span>
                         <h2 id="live-count" style="font-size: 3rem; color: var(--accent);">0</h2>
                     </div>
-                    <button id="btn-end" class="btn btn-secondary" style="width: 100%; border-color: var(--secondary); color: var(--secondary);">End Session Manually</button>
+
+                    <div id="live-presence-container" style="margin-top: 1.5rem; text-align: left;">
+                        <span style="display: block; font-size: 0.8rem; color: var(--accent); text-transform: uppercase; margin-bottom: 0.5rem;">Live Presence List</span>
+                        <div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.5rem;">
+                            <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
+                                <tbody id="live-presence-list">
+                                    <!-- Live list here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <button id="btn-end" class="btn btn-secondary" style="width: 100%; border-color: var(--secondary); color: var(--secondary); margin-top: 1rem;">End Session Manually</button>
                 </div>
             </div>
 
@@ -61,6 +73,16 @@
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Review student registration requests.</p>
                 <div id="pending-list" style="max-height: 400px; overflow-y: auto;">
                     <!-- List items here -->
+                </div>
+
+                <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                    <h3>Daily Report</h3>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Download all session records for a specific date.</p>
+                    <div class="input-group">
+                        <label>Select Date</label>
+                        <input type="date" id="report-date" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%;">
+                    </div>
+                    <button onclick="downloadDailyReport()" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Download PDF</button>
                 </div>
             </div>
         </div>
@@ -101,7 +123,68 @@
             
             document.getElementById('btn-start').onclick = startSession;
             document.getElementById('btn-end').onclick = endSession;
+            loadHistory();
         });
+
+        async function loadHistory() {
+            const historyTable = document.getElementById('history-table');
+            try {
+                const sessions = await app.request('/teacher/history');
+                historyTable.innerHTML = '';
+                sessions.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--glass-border)';
+                    tr.innerHTML = `
+                        <td style="padding: 1rem 0;">${s.subject}</td>
+                        <td style="padding: 1rem 0;">${new Date(s.startTime).toLocaleString()}</td>
+                        <td style="padding: 1rem 0;"><span style="color: ${s.active ? 'var(--accent)' : 'var(--text-muted)'}">${s.active ? 'Active' : 'Ended'}</span></td>
+                        <td style="padding: 1rem 0; text-align: right;">
+                            <button onclick="downloadSessionReport(${s.id})" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">PDF</button>
+                        </td>
+                    `;
+                    historyTable.appendChild(tr);
+                });
+            } catch (err) {}
+        }
+
+        async function downloadSessionReport(id) {
+            try {
+                const response = await fetch(`/api/teacher/report/${id}`, {
+                    headers: app.getHeaders()
+                });
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `session_report_${id}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (err) {
+                app.showToast('Failed to download report', 'danger');
+            }
+        }
+
+        async function downloadDailyReport() {
+            const date = document.getElementById('report-date').value;
+            if (!date) return app.showToast('Please select a date', 'danger');
+            
+            try {
+                const response = await fetch(`/api/teacher/report/date/${date}`, {
+                    headers: app.getHeaders()
+                });
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `daily_report_${date}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (err) {
+                app.showToast('Failed to download report', 'danger');
+            }
+        }
 
         async function loadPendingStudents() {
             const list = document.getElementById('pending-list');
@@ -176,6 +259,17 @@
             try {
                 const attList = await app.request(`/teacher/session/${currentSessionId}/attendance`);
                 document.getElementById('live-count').innerText = attList.length;
+                
+                const liveList = document.getElementById('live-presence-list');
+                liveList.innerHTML = '';
+                attList.forEach(att => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding: 0.3rem 0; color: white;">${att.student.user.name}</td>
+                        <td style="padding: 0.3rem 0; text-align: right; color: var(--text-muted);">${att.student.vtuNo}</td>
+                    `;
+                    liveList.appendChild(tr);
+                });
             } catch (err) {}
         }
 

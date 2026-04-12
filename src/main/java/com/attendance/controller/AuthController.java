@@ -123,12 +123,22 @@ public class AuthController {
             if (signUpRequest.getVtuNo() == null) {
                  return ResponseEntity.badRequest().body(new MessageResponse("Error: VTU Number is required!"));
             }
+
+            if (signUpRequest.getAccessKey() == null || signUpRequest.getAccessKey().isEmpty()) {
+                return ResponseEntity.badRequest().body(new MessageResponse("Error: Teacher Access Key is required for students!"));
+            }
+
+            // Verify if teacher with this access key exists
+            if (!teacherRepository.findByAccessKey(signUpRequest.getAccessKey()).isPresent()) {
+                return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid Teacher Access Key!"));
+            }
             
             Student student = Student.builder()
                     .user(user)
                     .vtuNo(signUpRequest.getVtuNo())
                     .branch(signUpRequest.getBranch())
                     .semester(signUpRequest.getSemester())
+                    .teacherAccessKey(signUpRequest.getAccessKey())
                     .isApproved(false) // Wait for teacher approval
                     .build();
             studentRepository.save(student);

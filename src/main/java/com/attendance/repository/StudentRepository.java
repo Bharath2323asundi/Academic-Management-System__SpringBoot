@@ -10,4 +10,5 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Optional<Student> findByUser(User user);
     Optional<Student> findByVtuNo(String vtuNo);
     List<Student> findByIsApprovedFalse();
+    List<Student> findByIsApprovedFalseAndTeacherAccessKey(String accessKey);
 }

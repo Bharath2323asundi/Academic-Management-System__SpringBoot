@@ -15,7 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -53,7 +56,8 @@ public class TeacherController {
 
     @GetMapping("/pending-students")
     public List<Student> getPendingStudents() {
-        return studentRepository.findByIsApprovedFalse();
+        Teacher teacher = getCurrentTeacher();
+        return studentRepository.findByIsApprovedFalseAndTeacherAccessKey(teacher.getAccessKey());
     }
 
     @PostMapping("/approve-student/{id}")
@@ -141,5 +145,38 @@ public class TeacherController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/report/date/{dateStr}")
+    public ResponseEntity<byte[]> downloadReportByDate(@PathVariable String dateStr) {
+        try {
+            Teacher teacher = getCurrentTeacher();
+            LocalDate date = LocalDate.parse(dateStr);
+            LocalDateTime start = date.atStartOfDay();
+            LocalDateTime end = date.atTime(LocalTime.MAX);
+
+            List<Attendance> attendanceList = attendanceRepository.findBySessionTeacherIdAndMarkedAtBetween(teacher.getId(), start, end);
+            
+            byte[] pdfContents = pdfService.generateGeneralReport(
+                "Daily Attendance Report",
+                "All Subjects",
+                teacher.getUser().getName(),
+                dateStr,
+                attendanceList
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "attendance_report_" + dateStr + ".pdf");
+            return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/history")
+    public List<Session> getSessionHistory() {
+        Teacher teacher = getCurrentTeacher();
+        return sessionRepository.findByTeacherOrderByStartTimeDesc(teacher);
     }
 }
