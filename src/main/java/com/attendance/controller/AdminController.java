@@ -1,6 +1,7 @@
 package com.attendance.controller;
 
 import com.attendance.dto.MessageResponse;
+import com.attendance.entity.Attendance;
 import com.attendance.entity.Role;
 import com.attendance.entity.Teacher;
 import com.attendance.repository.AttendanceRepository;
@@ -45,6 +46,20 @@ public class AdminController {
         return ResponseEntity.ok(new MessageResponse("Teacher status updated to: " + (teacher.isActive() ? "Active" : "Inactive")));
     }
 
+    @DeleteMapping("/teachers/{id}")
+    public ResponseEntity<?> deleteTeacher(@PathVariable Long id) {
+        Teacher teacher = teacherRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Error: Teacher not found."));
+        
+        // Associated user and records will be deleted if cascading is set up, 
+        // otherwise we might need manual cleanup. 
+        // Let's assume standard JPA delete for now.
+        teacherRepository.delete(teacher);
+        userRepository.delete(teacher.getUser());
+        
+        return ResponseEntity.ok(new MessageResponse("Teacher deleted successfully."));
+    }
+
     @GetMapping("/generate-key")
     public ResponseEntity<?> generateAccessKey() {
         // Generating a unique key. Admin gives this to a teacher.
@@ -66,5 +81,10 @@ public class AdminController {
         stats.put("attendanceCount", totalAttendance);
 
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/attendance-logs")
+    public List<Attendance> getGlobalLogs() {
+        return attendanceRepository.findAll();
     }
 }

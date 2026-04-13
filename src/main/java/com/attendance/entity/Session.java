@@ -36,4 +36,7 @@ public class Session {
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes = 10;
 }

@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.Duration;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -68,11 +69,13 @@ public class StudentController {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Outside teacher's network! Please connect to the Teacher's Hotspot."));
         }
 
-        // CHECK 2: Is QR Code still valid? (within 10 minutes)
+        // CHECK 2: Is QR Code still valid? (using dynamic duration)
         LocalDateTime now = LocalDateTime.now();
         long minutesElapsed = Duration.between(session.getStartTime(), now).toMinutes();
-        if (minutesElapsed > 10) {
-             return ResponseEntity.badRequest().body(new MessageResponse("Error: QR Code has expired (Valid for 10 mins only)."));
+        int allowedDuration = session.getDurationMinutes() != null ? session.getDurationMinutes() : 10;
+        
+        if (minutesElapsed > allowedDuration) {
+             return ResponseEntity.badRequest().body(new MessageResponse("Error: QR Code has expired (Valid for " + allowedDuration + " mins only)."));
         }
 
         // CHECK 3: Duplicate Check
@@ -97,5 +100,25 @@ public class StudentController {
     public List<Attendance> getHistory() {
         Student student = getCurrentStudent();
         return attendanceRepository.findByStudentOrderByMarkedAtDesc(student);
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats() {
+        Student student = getCurrentStudent();
+        List<Attendance> history = attendanceRepository.findByStudentOrderByMarkedAtDesc(student);
+        
+        // Group by subject and count
+        Map<String, Long> stats = history.stream()
+                .collect(Collectors.groupingBy(a -> a.getSession().getSubject(), Collectors.counting()));
+        
+        List<Map<String, Object>> result = new ArrayList<>();
+        stats.forEach((subject, count) -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("subject", subject);
+            map.put("count", count);
+            result.add(map);
+        });
+        
+        return ResponseEntity.ok(result);
     }
 }

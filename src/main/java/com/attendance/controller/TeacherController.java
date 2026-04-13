@@ -4,6 +4,7 @@ import com.attendance.dto.MessageResponse;
 import com.attendance.dto.SessionRequest;
 import com.attendance.entity.*;
 import com.attendance.repository.*;
+import com.attendance.service.CsvService;
 import com.attendance.service.PdfService;
 import com.attendance.service.QrCodeService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -51,6 +53,9 @@ public class TeacherController {
 
     @Autowired
     PdfService pdfService;
+
+    @Autowired
+    CsvService csvService;
 
     private Teacher getCurrentTeacher() {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
@@ -104,6 +109,7 @@ public class TeacherController {
                 .subject(sessionRequest.getSubject())
                 .qrToken(qrToken)
                 .startTime(LocalDateTime.now())
+                .durationMinutes(sessionRequest.getDurationMinutes() != null ? sessionRequest.getDurationMinutes() : 10)
                 .hotspotIp(teacherIP)
                 .isActive(true)
                 .build();
@@ -161,6 +167,24 @@ public class TeacherController {
         }
     }
 
+    @GetMapping("/report/csv/{id}")
+    public ResponseEntity<byte[]> downloadCsvReport(@PathVariable Long id) {
+        try {
+            Session session = sessionRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+            List<Attendance> attendanceList = attendanceRepository.findBySession(session);
+            byte[] csvContents = csvService.generateAttendanceCsv(session, attendanceList);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "text/csv")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attendance_report_" + id + ".csv\"")
+                    .body(csvContents);
+        } catch (Exception e) {
+            logger.error("Error generating session CSV report: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/report/date/{dateStr}")
     public ResponseEntity<byte[]> downloadReportByDate(@PathVariable String dateStr) {
         try {
@@ -191,6 +215,58 @@ public class TeacherController {
             logger.error("Error generating daily PDF report: ", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/report/date/csv/{dateStr}")
+    public ResponseEntity<byte[]> downloadDailyCsvReport(@PathVariable String dateStr) {
+        try {
+            Teacher teacher = getCurrentTeacher();
+            List<Attendance> attendanceList = attendanceRepository.findBySessionTeacherIdAndMarkedAtBetween(
+                    teacher.getId(), 
+                    LocalDate.parse(dateStr).atStartOfDay(), 
+                    LocalDate.parse(dateStr).atTime(LocalTime.MAX)
+            );
+            
+            byte[] csvContents = csvService.generateDailyCsv(teacher.getUser().getName(), dateStr, attendanceList);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "text/csv")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"daily_report_" + dateStr + ".csv\"")
+                    .body(csvContents);
+        } catch (Exception e) {
+            logger.error("Error generating daily CSV report: ", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/approve-all")
+    public ResponseEntity<?> approveAllStudents() {
+        Teacher teacher = getCurrentTeacher();
+        List<Student> pending = studentRepository.findByIsApprovedFalseAndTeacherAccessKey(teacher.getAccessKey());
+        pending.forEach(s -> s.setApproved(true));
+        studentRepository.saveAll(pending);
+        return ResponseEntity.ok(new MessageResponse("All students approved successfully."));
+    }
+
+    @Transactional
+    @DeleteMapping("/students/{id}")
+    public ResponseEntity<?> deleteStudent(@PathVariable Long id) {
+        Teacher teacher = getCurrentTeacher();
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Error: Student not found."));
+        
+        // Security Check: Verify the student belongs to this teacher
+        if (!student.getTeacherAccessKey().equals(teacher.getAccessKey())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageResponse("Error: You are not authorized to delete this student."));
+        }
+        
+        // Manual cleanup to ensure no foreign key issues
+        attendanceRepository.deleteAllByStudent(student);
+        studentRepository.delete(student);
+        userRepository.delete(student.getUser());
+        
+        return ResponseEntity.ok(new MessageResponse("Student and all associated records deleted permanently."));
     }
 
     @GetMapping("/my-students")

@@ -31,6 +31,11 @@
                 </div>
             </div>
         </nav>
+        
+        <!-- Attendance Stats Dashboard -->
+        <div id="stats-dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <!-- Stats cards here -->
+        </div>
 
         <div class="grid grid-2">
             <!-- Mark Attendance Section -->
@@ -86,6 +91,7 @@
                 window.location.href = 'auth.html';
             }
             loadHistory();
+            loadStats();
 
             document.getElementById('btn-mark').onclick = markAttendance;
             document.getElementById('btn-scan').onclick = toggleScanner;
@@ -157,6 +163,7 @@
                 
                 app.showToast('Attendance Marked! ✅');
                 loadHistory();
+                loadStats();
             } catch (err) {
                 statusBox.style.display = 'block';
                 statusBox.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
@@ -192,6 +199,31 @@
                         </div>
                     `;
                     list.appendChild(div);
+                });
+            } catch (err) {}
+        }
+
+        async function loadStats() {
+            const dashboard = document.getElementById('stats-dashboard');
+            try {
+                const stats = await app.request('/student/stats');
+                if (stats.length === 0) {
+                    dashboard.innerHTML = '';
+                    return;
+                }
+                dashboard.innerHTML = '';
+                stats.forEach(s => {
+                    const card = document.createElement('div');
+                    card.className = 'glass-card';
+                    card.style.padding = '1rem';
+                    card.style.textAlign = 'center';
+                    card.style.background = 'rgba(99, 102, 241, 0.05)';
+                    card.innerHTML = `
+                        <span style="display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">${s.subject}</span>
+                        <h2 style="margin: 0.5rem 0; color: var(--primary);">${s.count}</h2>
+                        <span style="font-size: 0.8rem; color: var(--accent);">Classes Attended</span>
+                    `;
+                    dashboard.appendChild(card);
                 });
             } catch (err) {}
         }

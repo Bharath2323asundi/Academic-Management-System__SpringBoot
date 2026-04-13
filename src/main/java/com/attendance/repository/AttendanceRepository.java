@@ -12,4 +12,5 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     List<Attendance> findByStudentOrderByMarkedAtDesc(Student student);
     Optional<Attendance> findBySessionAndStudent(Session session, Student student);
     List<Attendance> findBySessionTeacherIdAndMarkedAtBetween(Long teacherId, java.time.LocalDateTime start, java.time.LocalDateTime end);
+    void deleteAllByStudent(Student student);
 }

@@ -83,6 +83,30 @@
                 <button id="btn-gen-key" class="btn btn-primary" style="width: 100%;">Generate New Key</button>
             </div>
         </div>
+
+        <!-- Global Logs -->
+        <div class="glass-card" style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Global Attendance Logs</h2>
+                <button onclick="loadLogs()" class="btn btn-secondary btn-sm">Refresh Logs</button>
+            </div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 800px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 1rem 0;">Student</th>
+                            <th style="padding: 1rem 0;">Subject</th>
+                            <th style="padding: 1rem 0;">Teacher</th>
+                            <th style="padding: 1rem 0;">Date & Time</th>
+                            <th style="padding: 1rem 0;">IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-table">
+                        <!-- Rows loaded via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div id="toast"></div>
@@ -94,6 +118,7 @@
             }
             loadStats();
             loadTeachers();
+            loadLogs();
 
             document.getElementById('btn-gen-key').onclick = async () => {
                 const res = await app.request('/admin/generate-key');
@@ -133,9 +158,14 @@
                             </span>
                         </td>
                         <td style="padding: 1rem 0; text-align: right;">
-                            <button onclick="toggleTeacher(${t.id})" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                ${t.active ? 'Deactivate' : 'Activate'}
-                            </button>
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                <button onclick="toggleTeacher(${t.id})" class="btn btn-secondary btn-sm">
+                                    ${t.active ? 'Deactivate' : 'Activate'}
+                                </button>
+                                <button onclick="deleteTeacher(${t.id}, '${t.user.name}')" class="btn btn-logout btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                    Delete
+                                </button>
+                            </div>
                         </td>
                     `;
                     table.appendChild(tr);
@@ -148,6 +178,36 @@
                 await app.request(`/admin/teachers/${id}/toggle`, { method: 'POST' });
                 app.showToast('Status Updated');
                 loadTeachers();
+            } catch (err) {}
+        }
+
+        async function deleteTeacher(id, name) {
+            if (!confirm(`Are you sure you want to PERMANENTLY delete Teacher: ${name}? This will also remove their user account.`)) return;
+            try {
+                await app.request(`/admin/teachers/${id}`, { method: 'DELETE' });
+                app.showToast('Teacher Removed');
+                loadTeachers();
+                loadStats();
+            } catch (err) {}
+        }
+
+        async function loadLogs() {
+            const table = document.getElementById('logs-table');
+            try {
+                const logs = await app.request('/admin/attendance-logs');
+                table.innerHTML = '';
+                logs.forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--glass-border)';
+                    tr.innerHTML = `
+                        <td style="padding: 1rem 0;">${l.student.user.name}</td>
+                        <td style="padding: 1rem 0;">${l.session.subject}</td>
+                        <td style="padding: 1rem 0;">${l.session.teacher.user.name}</td>
+                        <td style="padding: 1rem 0;">${new Date(l.markedAt).toLocaleString()}</td>
+                        <td style="padding: 1rem 0;"><code>${l.studentIp}</code></td>
+                    `;
+                    table.appendChild(tr);
+                });
             } catch (err) {}
         }
     </script>

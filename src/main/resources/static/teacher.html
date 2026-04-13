@@ -42,8 +42,13 @@
                 <div id="session-inactive">
                     <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Start a new session to allow students to mark attendance.</p>
                     <div class="input-group">
-                        <label>Subject Name</label>
-                        <input type="text" id="session-subject" placeholder="Maths-101 (Section A)">
+                        <label>Session Duration</label>
+                        <select id="session-duration" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%; margin-bottom: 1rem;">
+                            <option value="5">5 Minutes</option>
+                            <option value="10" selected>10 Minutes</option>
+                            <option value="15">15 Minutes</option>
+                            <option value="30">30 Minutes</option>
+                        </select>
                     </div>
                     <button id="btn-start" class="btn btn-primary" style="width: 100%;">Start Session</button>
                 </div>
@@ -57,7 +62,7 @@
                         <span style="color: var(--text-muted); font-size: 0.8rem;">Manual Entry Token:</span>
                         <h4 id="display-token" style="color: var(--primary); font-family: monospace; letter-spacing: 2px; margin-top: 0.2rem;">----</h4>
                     </div>
-                    <p style="color: var(--secondary); font-weight: 600; margin-bottom: 1rem;">Expires in 10 minutes</p>
+                    <p id="countdown" style="color: var(--secondary); font-weight: 600; margin-bottom: 1rem;">Expires in --:--</p>
                     <div style="background: rgba(16,185,129,0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
                         <span style="display: block; font-size: 0.8rem; color: var(--accent); text-transform: uppercase;">Students Present</span>
                         <h2 id="live-count" style="font-size: 3rem; color: var(--accent);">0</h2>
@@ -94,6 +99,7 @@
                 <div id="pending-list" style="max-height: 200px; overflow-y: auto;">
                     <!-- List items here -->
                 </div>
+                <button id="btn-approve-all" class="btn btn-primary" style="width: 100%; margin-top: 1rem; background: var(--accent);">Approve All Pending</button>
 
                 <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                     <h3>Daily Report</h3>
@@ -102,7 +108,10 @@
                         <label>Select Date</label>
                         <input type="date" id="report-date" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%;">
                     </div>
-                    <button id="btn-daily-report" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Download PDF</button>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        <button id="btn-daily-report" class="btn btn-primary" style="flex: 1;">PDF</button>
+                        <button id="btn-daily-report-csv" class="btn btn-secondary" style="flex: 1;">Excel (CSV)</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -117,7 +126,7 @@
                             <th style="padding: 1rem 0;">Subject</th>
                             <th style="padding: 1rem 0;">Date & Time</th>
                             <th style="padding: 1rem 0;">Status</th>
-                            <th style="padding: 1rem 0; text-align: right;">Report</th>
+                            <th style="padding: 1rem 0; text-align: right;">Reports</th>
                         </tr>
                     </thead>
                     <tbody id="history-table">
@@ -133,6 +142,7 @@
     <script>
         let currentSessionId = null;
         let statsInterval = null;
+        let timerInterval = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             if (!app.user || !app.user.roles.includes('ROLE_TEACHER')) {
@@ -144,6 +154,8 @@
             document.getElementById('btn-start').onclick = startSession;
             document.getElementById('btn-end').onclick = endSession;
             document.getElementById('btn-daily-report').onclick = downloadDailyReport;
+            document.getElementById('btn-daily-report-csv').onclick = () => downloadDailyReport(true);
+            document.getElementById('btn-approve-all').onclick = approveAll;
             loadHistory();
             loadApprovedStudents();
             showAccessKey();
@@ -174,9 +186,10 @@
                     div.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h4 style="margin: 0; ${s.approved ? '' : 'color: var(--text-muted)'}">${s.user.name} ${s.approved ? '✅' : '(Pending)'}</h4>
+                                <h4 style="margin: 0;">${s.user.name}</h4>
                                 <small style="color: var(--text-muted)">${s.vtuNo} | ${s.branch} Sem ${s.semester}</small>
                             </div>
+                            <button onclick="deleteStudent(${s.id}, '${s.user.name}')" class="btn btn-logout" style="padding: 0.3rem 0.6rem; font-size: 0.7rem; border-color: var(--secondary); color: var(--secondary); background: transparent;">Delete</button>
                         </div>
                     `;
                     list.appendChild(div);
@@ -197,7 +210,10 @@
                         <td style="padding: 1rem 0;">${new Date(s.startTime).toLocaleString()}</td>
                         <td style="padding: 1rem 0;"><span style="color: ${s.active ? 'var(--accent)' : 'var(--text-muted)'}">${s.active ? 'Active' : 'Ended'}</span></td>
                         <td style="padding: 1rem 0; text-align: right;">
-                            <button onclick="downloadSessionReport(${s.id})" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">PDF</button>
+                            <div style="display: flex; gap: 0.3rem; justify-content: flex-end;">
+                                <button onclick="downloadSessionReport(${s.id})" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">PDF</button>
+                                <button onclick="downloadSessionReport(${s.id}, true)" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.7rem; border-color: var(--accent); color: var(--accent);">CSV</button>
+                            </div>
                         </td>
                     `;
                     historyTable.appendChild(tr);
@@ -205,37 +221,35 @@
             } catch (err) {}
         }
 
-        async function downloadSessionReport(id) {
+        async function downloadSessionReport(id, isCsv = false) {
             try {
-                const blob = await app.request(`/teacher/report/${id}`);
+                const urlPath = isCsv ? `/teacher/report/csv/${id}` : `/teacher/report/${id}`;
+                const blob = await app.request(urlPath);
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `session_report_${id}.pdf`;
+                a.download = `session_report_${id}.${isCsv ? 'csv' : 'pdf'}`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-            } catch (err) {
-                // app.request handles toast on failure
-            }
+            } catch (err) { }
         }
 
-        async function downloadDailyReport() {
+        async function downloadDailyReport(isCsv = false) {
             const date = document.getElementById('report-date').value;
             if (!date) return app.showToast('Please select a date', 'danger');
             
             try {
-                const blob = await app.request(`/teacher/report/date/${date}`);
+                const urlPath = isCsv ? `/teacher/report/date/csv/${date}` : `/teacher/report/date/${date}`;
+                const blob = await app.request(urlPath);
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `daily_report_${date}.pdf`;
+                a.download = `daily_report_${date}.${isCsv ? 'csv' : 'pdf'}`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-            } catch (err) {
-                // app.request handles toast on failure
-            }
+            } catch (err) { }
         }
 
         async function loadPendingStudents() {
@@ -284,14 +298,34 @@
             loadApprovedStudents();
         }
 
+        async function deleteStudent(id, name) {
+            if (!confirm(`Are you sure you want to PERMANENTLY delete student: ${name}? This will also remove their user account and all attendance history.`)) return;
+            try {
+                await app.request(`/teacher/students/${id}`, { method: 'DELETE' });
+                app.showToast('Student Removed');
+                loadApprovedStudents();
+            } catch (err) {}
+        }
+
+        async function approveAll() {
+            if (!confirm('Approve all pending registration requests?')) return;
+            try {
+                await app.request('/teacher/approve-all', { method: 'POST' });
+                app.showToast('All Students Approved');
+                loadPendingStudents();
+                loadApprovedStudents();
+            } catch (err) {}
+        }
+
         async function startSession() {
             const subject = document.getElementById('session-subject').value;
+            const durationMinutes = parseInt(document.getElementById('session-duration').value);
             if (!subject) return app.showToast('Enter subject name', 'danger');
 
             try {
                 const res = await app.request('/teacher/start-session', {
                     method: 'POST',
-                    body: JSON.stringify({ subject })
+                    body: JSON.stringify({ subject, durationMinutes })
                 });
 
                 currentSessionId = res.sessionId;
@@ -301,11 +335,34 @@
                 document.getElementById('session-inactive').style.display = 'none';
                 document.getElementById('session-active').style.display = 'block';
 
+                document.getElementById('session-active').style.display = 'block';
+
                 app.showToast('Session Started');
                 
-                // Start polling for live count
+                // Start timer and polling
+                startTimer(durationMinutes);
                 statsInterval = setInterval(updateLiveCount, 3000);
             } catch (err) {}
+        }
+
+        function startTimer(minutes) {
+            let seconds = minutes * 60;
+            const countdownEl = document.getElementById('countdown');
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                countdownEl.innerText = `Expires in ${m}:${s < 10 ? '0' : ''}${s}`;
+                
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    countdownEl.innerText = 'Session Expired (QR Invalid)';
+                    countdownEl.style.color = '#ef4444';
+                }
+                seconds--;
+            }, 1000);
         }
 
         async function updateLiveCount() {
@@ -332,6 +389,7 @@
             try {
                 await app.request(`/teacher/end-session/${currentSessionId}`, { method: 'POST' });
                 clearInterval(statsInterval);
+                if (timerInterval) clearInterval(timerInterval);
                 document.getElementById('session-inactive').style.display = 'block';
                 document.getElementById('session-active').style.display = 'none';
                 app.showToast('Session Ended');
