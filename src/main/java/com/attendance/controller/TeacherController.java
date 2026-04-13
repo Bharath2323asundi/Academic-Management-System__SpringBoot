@@ -138,10 +138,14 @@ public class TeacherController {
             List<Attendance> attendanceList = attendanceRepository.findBySession(session);
             byte[] pdfContents = pdfService.generateAttendanceReport(session, attendanceList);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "attendance_report.pdf");
-            return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attendance_report_" + id + ".pdf\"")
+                    .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                    .header(HttpHeaders.PRAGMA, "no-cache")
+                    .header(HttpHeaders.EXPIRES, "0")
+                    .contentLength(pdfContents.length)
+                    .body(pdfContents);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -165,13 +169,23 @@ public class TeacherController {
                 attendanceList
             );
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "attendance_report_" + dateStr + ".pdf");
-            return new ResponseEntity<>(pdfContents, headers, HttpStatus.OK);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"attendance_report_" + dateStr + ".pdf\"")
+                    .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                    .header(HttpHeaders.PRAGMA, "no-cache")
+                    .header(HttpHeaders.EXPIRES, "0")
+                    .contentLength(pdfContents.length)
+                    .body(pdfContents);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("/my-students")
+    public List<Student> getMyStudents() {
+        Teacher teacher = getCurrentTeacher();
+        return studentRepository.findByTeacherAccessKey(teacher.getAccessKey());
     }
 
     @GetMapping("/history")

@@ -26,36 +26,44 @@ public class PdfService {
 
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
                 contentStream.beginText();
-                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 18);
+                contentStream.setFont(PDType1Font.COURIER_BOLD, 16);
                 contentStream.setLeading(20f);
                 contentStream.newLineAtOffset(50, 750);
                 
                 contentStream.showText(title);
                 contentStream.newLine();
-                contentStream.setFont(PDType1Font.HELVETICA, 12);
+                contentStream.setFont(PDType1Font.COURIER, 10);
                 if (subject != null) {
                     contentStream.showText("Subject: " + subject);
                     contentStream.newLine();
                 }
                 contentStream.showText("Teacher: " + teacherName);
                 contentStream.newLine();
-                contentStream.showText("Date: " + date);
+                contentStream.showText("Date:    " + date);
                 contentStream.newLine();
                 contentStream.showText("-----------------------------------------------------------------------");
                 contentStream.newLine();
                 
-                contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                contentStream.showText(String.format("%-20s %-20s %-20s", "Student Name", "VTU No", "Time"));
+                contentStream.setFont(PDType1Font.COURIER_BOLD, 10);
+                contentStream.showText(String.format("%-25s %-15s %-15s", "Student Name", "VTU No", "Time"));
                 contentStream.newLine();
-                contentStream.setFont(PDType1Font.HELVETICA, 12);
+                contentStream.showText("-----------------------------------------------------------------------");
+                contentStream.newLine();
+                contentStream.setFont(PDType1Font.COURIER, 10);
 
+                int count = 0;
                 for (Attendance att : attendanceList) {
-                    String line = String.format("%-20s %-20s %-20s", 
-                        att.getStudent().getUser().getName(),
+                    if (count >= 30) break; // Simple page limit for now
+                    String name = att.getStudent().getUser().getName();
+                    if (name.length() > 24) name = name.substring(0, 21) + "...";
+                    
+                    String line = String.format("%-25s %-15s %-15s", 
+                        name,
                         att.getStudent().getVtuNo(),
                         att.getMarkedAt().toLocalTime().toString().substring(0, 8));
                     contentStream.showText(line);
                     contentStream.newLine();
+                    count++;
                 }
 
                 contentStream.endText();

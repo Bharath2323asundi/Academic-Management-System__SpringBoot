@@ -58,6 +58,11 @@ public class StudentController {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid or Expired QR Code / Session."));
         }
 
+        // NEW CHECK: Does this student belong to this teacher?
+        if (!student.getTeacherAccessKey().equals(session.getTeacher().getAccessKey())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: You are not authorized for this Teacher's session."));
+        }
+
         // CHECK 1: Public IP Matching (Verifies they are on the same network/hotspot from the cloud)
         if (!studentIP.equals(session.getHotspotIp()) && !studentIP.equals("127.0.0.1") && !studentIP.equals("0:0:0:0:0:0:0:1")) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Outside teacher's network! Please connect to the Teacher's Hotspot."));

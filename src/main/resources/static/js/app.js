@@ -41,6 +41,10 @@ const app = {
             
             console.log(`[API] Response: ${response.status} ${response.statusText}`, { contentType });
 
+            if (contentType && contentType.includes("application/pdf")) {
+                return await response.blob();
+            }
+
             let data;
             if (contentType && contentType.includes("application/json")) {
                 const text = await response.text();
@@ -55,6 +59,11 @@ const app = {
             }
             
             if (!response.ok) {
+                // If it was a blob but failed, let's try to parse the error message if possible
+                if (data instanceof Blob) {
+                    const errorText = await data.text();
+                    throw new Error(errorText || `Error ${response.status}`);
+                }
                 throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
             }
             return data;

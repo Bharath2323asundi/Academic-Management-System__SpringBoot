@@ -67,11 +67,20 @@
                 </div>
             </div>
 
+            <!-- My Students -->
+            <div class="glass-card">
+                <h2>My Students</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">List of all students linked to your access key.</p>
+                <div id="approved-list" style="max-height: 400px; overflow-y: auto;">
+                    <!-- List items here -->
+                </div>
+            </div>
+
             <!-- Student Approvals -->
             <div class="glass-card">
                 <h2>Pending Approvals</h2>
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Review student registration requests.</p>
-                <div id="pending-list" style="max-height: 400px; overflow-y: auto;">
+                <div id="pending-list" style="max-height: 200px; overflow-y: auto;">
                     <!-- List items here -->
                 </div>
 
@@ -82,7 +91,7 @@
                         <label>Select Date</label>
                         <input type="date" id="report-date" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%;">
                     </div>
-                    <button onclick="downloadDailyReport()" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Download PDF</button>
+                    <button id="btn-daily-report" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Download PDF</button>
                 </div>
             </div>
         </div>
@@ -123,8 +132,38 @@
             
             document.getElementById('btn-start').onclick = startSession;
             document.getElementById('btn-end').onclick = endSession;
+            document.getElementById('btn-daily-report').onclick = downloadDailyReport;
             loadHistory();
+            loadApprovedStudents();
         });
+
+        async function loadApprovedStudents() {
+            const list = document.getElementById('approved-list');
+            try {
+                const students = await app.request('/teacher/my-students');
+                if (students.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No students found.</p>';
+                    return;
+                }
+                list.innerHTML = '';
+                students.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'glass-card';
+                    div.style.padding = '1rem';
+                    div.style.marginBottom = '0.5rem';
+                    div.style.background = 'rgba(255,255,255,0.03)';
+                    div.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="margin: 0; ${s.approved ? '' : 'color: var(--text-muted)'}">${s.user.name} ${s.approved ? '✅' : '(Pending)'}</h4>
+                                <small style="color: var(--text-muted)">${s.vtuNo} | ${s.branch} Sem ${s.semester}</small>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {}
+        }
 
         async function loadHistory() {
             const historyTable = document.getElementById('history-table');
@@ -149,10 +188,7 @@
 
         async function downloadSessionReport(id) {
             try {
-                const response = await fetch(`/api/teacher/report/${id}`, {
-                    headers: app.getHeaders()
-                });
-                const blob = await response.blob();
+                const blob = await app.request(`/teacher/report/${id}`);
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -161,7 +197,7 @@
                 a.click();
                 a.remove();
             } catch (err) {
-                app.showToast('Failed to download report', 'danger');
+                // app.request handles toast on failure
             }
         }
 
@@ -170,10 +206,7 @@
             if (!date) return app.showToast('Please select a date', 'danger');
             
             try {
-                const response = await fetch(`/api/teacher/report/date/${date}`, {
-                    headers: app.getHeaders()
-                });
-                const blob = await response.blob();
+                const blob = await app.request(`/teacher/report/date/${date}`);
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -182,7 +215,7 @@
                 a.click();
                 a.remove();
             } catch (err) {
-                app.showToast('Failed to download report', 'danger');
+                // app.request handles toast on failure
             }
         }
 
@@ -222,12 +255,14 @@
             await app.request(`/teacher/approve-student/${id}`, { method: 'POST' });
             app.showToast('Student Approved');
             loadPendingStudents();
+            loadApprovedStudents();
         }
 
         async function reject(id) {
             await app.request(`/teacher/reject-student/${id}`, { method: 'POST' });
             app.showToast('Student Rejected');
             loadPendingStudents();
+            loadApprovedStudents();
         }
 
         async function startSession() {
