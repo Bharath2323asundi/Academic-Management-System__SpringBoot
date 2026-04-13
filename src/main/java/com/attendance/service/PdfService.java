@@ -10,13 +10,21 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 public class PdfService {
 
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+
     public byte[] generateAttendanceReport(Session session, List<Attendance> attendanceList) throws IOException {
-        return generateGeneralReport("Attendance Report", session.getSubject(), session.getTeacher().getUser().getName(), session.getStartTime().toLocalDate().toString(), attendanceList);
+        String teacherName = (session.getTeacher() != null && session.getTeacher().getUser() != null) 
+            ? session.getTeacher().getUser().getName() : "Unknown";
+        String date = (session.getStartTime() != null) 
+            ? session.getStartTime().toLocalDate().toString() : "Unknown";
+            
+        return generateGeneralReport("Attendance Report", session.getSubject(), teacherName, date, attendanceList);
     }
 
     public byte[] generateGeneralReport(String title, String subject, String teacherName, String date, List<Attendance> attendanceList) throws IOException {
@@ -54,13 +62,22 @@ public class PdfService {
                 int count = 0;
                 for (Attendance att : attendanceList) {
                     if (count >= 30) break; // Simple page limit for now
+                    if (att.getStudent() == null || att.getStudent().getUser() == null) continue;
+
                     String name = att.getStudent().getUser().getName();
+                    if (name == null) name = "Unknown";
+                    name = sanitizeForPdf(name);
                     if (name.length() > 24) name = name.substring(0, 21) + "...";
                     
+                    String timestamp = "N/A";
+                    if (att.getMarkedAt() != null) {
+                        timestamp = att.getMarkedAt().toLocalTime().format(TIME_FORMATTER);
+                    }
+
                     String line = String.format("%-25s %-15s %-15s", 
                         name,
-                        att.getStudent().getVtuNo(),
-                        att.getMarkedAt().toLocalTime().toString().substring(0, 8));
+                        att.getStudent().getVtuNo() != null ? att.getStudent().getVtuNo() : "N/A",
+                        timestamp);
                     contentStream.showText(line);
                     contentStream.newLine();
                     count++;
@@ -73,5 +90,13 @@ public class PdfService {
             document.save(baos);
             return baos.toByteArray();
         }
+    }
+
+    private String sanitizeForPdf(String text) {
+        if (text == null) return "";
+        // PDF Standard 14 fonts (like Courier) mostly support Windows-1252 / WinAnsiEncoding.
+        // For simplicity, we'll strip characters that might cause PDPageContentStream.showText to fail.
+        // Replace non-ASCII and non-printable characters with '?'
+        return text.replaceAll("[^\\x20-\\x7E]", "?");
     }
 }

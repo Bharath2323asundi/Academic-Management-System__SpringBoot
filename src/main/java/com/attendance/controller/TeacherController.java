@@ -7,6 +7,8 @@ import com.attendance.repository.*;
 import com.attendance.service.PdfService;
 import com.attendance.service.QrCodeService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,8 @@ import java.util.*;
 @RequestMapping("/api/teacher")
 @PreAuthorize("hasRole('TEACHER')")
 public class TeacherController {
+
+    private static final Logger logger = LoggerFactory.getLogger(TeacherController.class);
 
     @Autowired
     TeacherRepository teacherRepository;
@@ -50,8 +54,10 @@ public class TeacherController {
 
     private Teacher getCurrentTeacher() {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email).get();
-        return teacherRepository.findByUser(user).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Error: Current user not found."));
+        return teacherRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Error: Teacher profile not found."));
     }
 
     @GetMapping("/pending-students")
@@ -118,7 +124,8 @@ public class TeacherController {
 
     @PostMapping("/end-session/{id}")
     public ResponseEntity<?> endSession(@PathVariable Long id) {
-        Session session = sessionRepository.findById(id).get();
+        Session session = sessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Error: Session not found."));
         session.setActive(false);
         session.setEndTime(LocalDateTime.now());
         sessionRepository.save(session);
@@ -127,14 +134,16 @@ public class TeacherController {
 
     @GetMapping("/session/{id}/attendance")
     public List<Attendance> getSessionAttendance(@PathVariable Long id) {
-        Session session = sessionRepository.findById(id).get();
+        Session session = sessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Error: Session not found."));
         return attendanceRepository.findBySession(session);
     }
 
     @GetMapping("/report/{id}")
     public ResponseEntity<byte[]> downloadReport(@PathVariable Long id) {
         try {
-            Session session = sessionRepository.findById(id).get();
+            Session session = sessionRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
             List<Attendance> attendanceList = attendanceRepository.findBySession(session);
             byte[] pdfContents = pdfService.generateAttendanceReport(session, attendanceList);
 
@@ -147,6 +156,7 @@ public class TeacherController {
                     .contentLength(pdfContents.length)
                     .body(pdfContents);
         } catch (Exception e) {
+            logger.error("Error generating session PDF report: ", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -178,6 +188,7 @@ public class TeacherController {
                     .contentLength(pdfContents.length)
                     .body(pdfContents);
         } catch (Exception e) {
+            logger.error("Error generating daily PDF report: ", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
