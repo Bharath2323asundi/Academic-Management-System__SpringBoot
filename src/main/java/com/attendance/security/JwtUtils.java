@@ -25,9 +25,14 @@ public class JwtUtils {
 
     public String generateJwtToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+        
+        List<String> roles = userPrincipal.getAuthorities().stream()
+                .map(item -> item.getAuthority())
+                .collect(Collectors.toList());
 
         return Jwts.builder()
                 .setSubject((userPrincipal.getUsername()))
+                .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), SignatureAlgorithm.HS256)
@@ -35,7 +40,19 @@ public class JwtUtils {
     }
 
     private Key key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+        try {
+            // Try to decode as Hex first (matches application.properties format)
+            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret); // Fallback to current if it's actually B64
+            // Since the secret is 64 hex chars, Decoders.BASE64 might fail or give wrong bytes.
+            // Let's use a more robust way to handle the 256-bit hex string.
+            if (jwtSecret.length() == 64 && jwtSecret.matches("^[0-9a-fA-F]+$")) {
+                keyBytes = Decoders.HEX.decode(jwtSecret);
+            }
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            // If all else fails, use raw bytes (not recommended but avoids crash)
+            return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        }
     }
 
     public String getUserNameFromJwtToken(String token) {

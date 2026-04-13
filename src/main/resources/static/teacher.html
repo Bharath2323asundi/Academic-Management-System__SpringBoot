@@ -42,6 +42,10 @@
                 <div id="session-inactive">
                     <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Start a new session to allow students to mark attendance.</p>
                     <div class="input-group">
+                        <label>Subject / Class Name</label>
+                        <input type="text" id="session-subject" placeholder="e.g. Mathematics - CS101" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%; margin-bottom: 1rem;">
+                    </div>
+                    <div class="input-group">
                         <label>Session Duration</label>
                         <select id="session-duration" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%; margin-bottom: 1rem;">
                             <option value="5">5 Minutes</option>
@@ -318,31 +322,47 @@
         }
 
         async function startSession() {
-            const subject = document.getElementById('session-subject').value;
-            const durationMinutes = parseInt(document.getElementById('session-duration').value);
-            if (!subject) return app.showToast('Enter subject name', 'danger');
+            const subjectEl = document.getElementById('session-subject');
+            const durationEl = document.getElementById('session-duration');
+            
+            if (!subjectEl || !durationEl) {
+                console.error('Critical elements missing: subject or duration');
+                return app.showToast('UI Error: Missing input fields', 'danger');
+            }
+
+            const subject = subjectEl.value.trim();
+            const durationMinutes = parseInt(durationEl.value);
+
+            if (!subject) return app.showToast('Please enter a subject name', 'danger');
 
             try {
+                app.showToast('Starting session...', 'info');
                 const res = await app.request('/teacher/start-session', {
                     method: 'POST',
                     body: JSON.stringify({ subject, durationMinutes })
                 });
 
-                currentSessionId = res.sessionId;
-                document.getElementById('qr-image').src = `data:image/png;base64,${res.qrCode}`;
-                document.getElementById('display-token').innerText = res.qrToken;
-                document.getElementById('active-subject').innerText = subject;
-                document.getElementById('session-inactive').style.display = 'none';
-                document.getElementById('session-active').style.display = 'block';
+                if (res && res.qrCode) {
+                    currentSessionId = res.sessionId;
+                    document.getElementById('qr-image').src = `data:image/png;base64,${res.qrCode}`;
+                    document.getElementById('display-token').innerText = res.qrToken || '----';
+                    document.getElementById('active-subject').innerText = subject;
+                    
+                    document.getElementById('session-inactive').style.display = 'none';
+                    document.getElementById('session-active').style.display = 'block';
 
-                document.getElementById('session-active').style.display = 'block';
-
-                app.showToast('Session Started');
-                
-                // Start timer and polling
-                startTimer(durationMinutes);
-                statsInterval = setInterval(updateLiveCount, 3000);
-            } catch (err) {}
+                    app.showToast('Session Started Successfully');
+                    
+                    // Start timer and polling
+                    startTimer(durationMinutes);
+                    statsInterval = setInterval(updateLiveCount, 3000);
+                } else {
+                    throw new Error('Invalid response from server');
+                }
+            } catch (err) {
+                console.error('Failed to start session:', err);
+                app.showToast(err.message || 'Failed to start session', 'danger');
+            }
         }
 
         function startTimer(minutes) {

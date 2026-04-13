@@ -121,6 +121,7 @@ public class TeacherController {
             Map<String, Object> response = new HashMap<>();
             response.put("sessionId", session.getId());
             response.put("qrCode", qrBase64);
+            response.put("qrToken", qrToken);
             response.put("startTime", session.getStartTime());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
