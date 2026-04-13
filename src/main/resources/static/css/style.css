@@ -27,6 +27,11 @@ body {
     min-height: 100vh;
     line-height: 1.5;
     overflow-x: hidden;
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    body { font-size: 14px; }
 }
 
 /* Premium Background Animated Circles */
@@ -54,6 +59,10 @@ body {
 .blob-2 { background: var(--secondary); bottom: -100px; right: -100px; animation-delay: -5s; }
 .blob-3 { background: var(--accent); top: 50%; left: 50%; animation-delay: -10s; }
 
+@media (max-width: 768px) {
+    .blob { width: 200px; height: 200px; }
+}
+
 @keyframes move {
     0% { transform: translate(0, 0) scale(1); }
     100% { transform: translate(100px, 50px) scale(1.1); }
@@ -68,6 +77,10 @@ body {
     border-radius: 24px;
     padding: 2rem;
     box-shadow: var(--shadow);
+}
+
+@media (max-width: 768px) {
+    .glass-card { padding: 1.5rem; border-radius: 16px; }
 }
 
 /* Typography */
@@ -163,6 +176,11 @@ h1, h2, h3 {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .container { padding: 1rem; }
 }
 
 .navbar {
@@ -171,8 +189,63 @@ h1, h2, h3 {
     align-items: center;
     padding: 1.5rem 0;
     margin-bottom: 3rem;
-    flex-wrap: wrap;
-    gap: 1rem;
+    position: relative;
+    z-index: 100;
+}
+
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 5px;
+}
+
+.hamburger span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: var(--text);
+    border-radius: 3px;
+    transition: var(--transition);
+}
+
+@media (max-width: 768px) {
+    .hamburger { display: flex; }
+    
+    .nav-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: var(--dark-light);
+        flex-direction: column;
+        padding: 2rem;
+        border-radius: 16px;
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow);
+        transform: translateY(-20px);
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+        text-align: center;
+    }
+
+    .nav-menu.active {
+        transform: translateY(10px);
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .nav-menu .btn { width: 100%; }
 }
 
 .logo {
@@ -216,9 +289,37 @@ h1, h2, h3 {
     gap: 1.5rem;
 }
 
+.grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+}
+
 @media (min-width: 768px) {
     .grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
     .grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Helper Classes */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 1rem;
+}
+
+.text-center-mobile {
+    @media (max-width: 768px) { text-align: center; }
+}
+
+.hero-title {
+    font-size: clamp(2rem, 8vw, 4rem);
+    line-height: 1.1;
+}
+
+.btn {
+    min-height: 44px; /* Tap target */
 }
 
 /* Toast Notification (Simple) */

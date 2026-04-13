@@ -14,4 +14,5 @@ public class JwtResponse {
     private List<String> roles;
     private String studentStatus; // Approved/Pending (for student)
     private Boolean teacherActive; // Active/Inactive (for teacher)
+    private String accessKey; // The key students use to link to this teacher
 }

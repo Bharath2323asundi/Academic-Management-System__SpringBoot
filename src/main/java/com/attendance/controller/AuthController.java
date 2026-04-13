@@ -59,6 +59,8 @@ public class AuthController {
         String studentStatus = null;
         Boolean teacherActive = null;
 
+        String accessKey = null;
+
         if (user.getRole() == Role.STUDENT) {
             Student student = studentRepository.findByUser(user).get();
             studentStatus = student.isApproved() ? "APPROVED" : "PENDING";
@@ -68,6 +70,7 @@ public class AuthController {
         } else if (user.getRole() == Role.TEACHER) {
             Teacher teacher = teacherRepository.findByUser(user).get();
             teacherActive = teacher.isActive();
+            accessKey = teacher.getAccessKey();
             if (!teacher.isActive()) {
                 return ResponseEntity.badRequest().body(new MessageResponse("Your teacher account is deactivated by Admin."));
             }
@@ -79,7 +82,8 @@ public class AuthController {
                 user.getEmail(),
                 roles,
                 studentStatus,
-                teacherActive));
+                teacherActive,
+                accessKey));
     }
 
     @PostMapping("/signup")

@@ -15,15 +15,25 @@
         <div class="blob blob-2"></div>
     </div>
 
-    <div class="container" style="max-width: 500px; padding-top: 10vh;">
-        <div class="logo" style="justify-content: center; margin-bottom: 2rem;">
-            <a href="index.html" style="text-decoration: none;"><span class="gradient-text">GeoAttend</span></a>
-        </div>
+    <div class="container">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none;"><span class="gradient-text">GeoAttend</span></a>
+            </div>
+            <button class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <a href="index.html" class="btn btn-secondary">Home</a>
+            </div>
+        </nav>
 
-        <div class="glass-card">
-            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
-                <button class="btn" id="login-tab" style="background: none; flex: 1; border-bottom: 2px solid var(--primary);">Login</button>
-                <button class="btn" id="register-tab" style="background: none; flex: 1;">Register</button>
+        <div class="glass-card" style="width: 100%; max-width: 500px; margin: 0 auto;">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; flex-wrap: wrap;">
+                <button class="btn" id="login-tab" style="background: none; flex: 1; border-bottom: 2px solid var(--primary); min-width: 100px;">Login</button>
+                <button class="btn" id="register-tab" style="background: none; flex: 1; min-width: 100px;">Register</button>
             </div>
 
             <!-- Login Form -->

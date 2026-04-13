@@ -7,6 +7,21 @@ const app = {
 
     init() {
         this.updateUI();
+        this.initHamburgerMenu();
+    },
+
+    initHamburgerMenu() {
+        const hamburger = document.querySelector('.hamburger');
+        const menu = document.querySelector('.nav-menu');
+        if (hamburger && menu) {
+            hamburger.onclick = () => {
+                menu.classList.toggle('active');
+            };
+            // Close menu on link click
+            menu.onclick = (e) => {
+                if (e.target.closest('.btn')) menu.classList.remove('active');
+            }
+        }
     },
 
     saveAuth(userData, token) {

@@ -18,9 +18,20 @@
             <div class="logo">
                 <span class="gradient-text">Teacher Portal</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Teacher Name</span>
-                <button onclick="app.logout()" class="btn btn-logout">Logout</button>
+            <button class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <div id="access-key-badge" style="background: rgba(99, 102, 241, 0.1); border: 1px dashed var(--primary); padding: 0.3rem 0.6rem; border-radius: 6px; display: none; text-align: left;">
+                    <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; display: block; line-height: 1;">Access Key</span>
+                    <span id="nav-access-key" style="color: var(--primary); font-family: monospace; font-weight: bold; font-size: 0.9rem;">----</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                    <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Teacher Name</span>
+                    <button onclick="app.logout()" class="btn btn-logout">Logout</button>
+                </div>
             </div>
         </nav>
 
@@ -99,8 +110,8 @@
         <!-- Session History -->
         <div class="glass-card" style="margin-top: 2rem;">
             <h2>Recent Sessions</h2>
-            <div style="overflow-x: auto; margin-top: 1rem;">
-                <table style="width: 100%; border-collapse: collapse;">
+            <div class="table-responsive">
+                <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
                     <thead>
                         <tr style="border-bottom: 1px solid var(--glass-border); text-align: left;">
                             <th style="padding: 1rem 0;">Subject</th>
@@ -135,7 +146,15 @@
             document.getElementById('btn-daily-report').onclick = downloadDailyReport;
             loadHistory();
             loadApprovedStudents();
+            showAccessKey();
         });
+
+        function showAccessKey() {
+            if (app.user && app.user.accessKey) {
+                document.getElementById('access-key-badge').style.display = 'block';
+                document.getElementById('nav-access-key').innerText = app.user.accessKey;
+            }
+        }
 
         async function loadApprovedStudents() {
             const list = document.getElementById('approved-list');

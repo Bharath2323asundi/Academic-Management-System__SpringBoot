@@ -19,9 +19,16 @@
             <div class="logo">
                 <span class="gradient-text">Student Portal</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Student Name</span>
-                <button onclick="app.logout()" class="btn btn-logout">Logout</button>
+            <button class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                    <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Student Name</span>
+                    <button onclick="app.logout()" class="btn btn-logout">Logout</button>
+                </div>
             </div>
         </nav>
 

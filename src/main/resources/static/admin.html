@@ -18,9 +18,16 @@
             <div class="logo">
                 <span class="gradient-text">Admin Portal</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Admin</span>
-                <button onclick="app.logout()" class="btn btn-logout">Logout</button>
+            <button class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                    <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Admin</span>
+                    <button onclick="app.logout()" class="btn btn-logout">Logout</button>
+                </div>
             </div>
         </nav>
 
@@ -47,8 +54,8 @@
                     <h2>Manage Teachers</h2>
                     <button onclick="loadTeachers()" class="btn btn-secondary btn-sm">Refresh</button>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <div class="table-responsive">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;">
                         <thead>
                             <tr style="border-bottom: 1px solid var(--glass-border);">
                                 <th style="padding: 1rem 0;">Name</th>

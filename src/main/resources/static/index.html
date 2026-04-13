@@ -19,18 +19,23 @@
             <div class="logo">
                 <span class="gradient-text">GeoAttend</span>
             </div>
-            <div id="nav-links">
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-menu" id="nav-links">
                 <a href="auth.html" class="btn btn-primary">Get Started</a>
             </div>
         </nav>
 
-        <main style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
-            <h1 style="font-size: 4rem; margin-bottom: 1rem;">Network-Based <br><span class="gradient-text">Attendance System</span></h1>
-            <p style="color: var(--text-muted); max-width: 600px; margin-bottom: 2rem; font-size: 1.2rem;">
+        <main style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 2rem 0;">
+            <h1 class="hero-title">Network-Based <br><span class="gradient-text">Attendance System</span></h1>
+            <p style="color: var(--text-muted); max-width: 600px; margin-bottom: 2rem; font-size: 1.1rem; padding: 0 1rem;">
                 Secure hotspot geo-fencing ensures students are physically present in the classroom. 
                 Encrypted QR session tokens for high-integrity attendance records.
             </p>
-            <div style="display: flex; gap: 1rem;">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
                 <a href="auth.html?role=student" class="btn btn-secondary">Student Access</a>
                 <a href="auth.html?role=teacher" class="btn btn-secondary">Teacher Portal</a>
             </div>
