@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
+import java.util.HexFormat;
 import java.util.stream.Collectors;
 
 @Component
@@ -43,16 +44,21 @@ public class JwtUtils {
 
     private Key key() {
         try {
-            // Try to decode as Hex first (matches application.properties format)
-            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret); // Fallback to current if it's actually B64
-            // Since the secret is 64 hex chars, Decoders.BASE64 might fail or give wrong bytes.
-            // Let's use a more robust way to handle the 256-bit hex string.
+            byte[] keyBytes;
+            // The secret in application.properties is a 64-char Hex string (256 bits)
             if (jwtSecret.length() == 64 && jwtSecret.matches("^[0-9a-fA-F]+$")) {
-                keyBytes = Decoders.HEX.decode(jwtSecret);
+                keyBytes = HexFormat.of().parseHex(jwtSecret);
+            } else {
+                // Fallback for Base64 or raw bytes
+                try {
+                    keyBytes = Decoders.BASE64.decode(jwtSecret);
+                } catch (Exception e) {
+                    keyBytes = jwtSecret.getBytes();
+                }
             }
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            // If all else fails, use raw bytes (not recommended but avoids crash)
+            logger.error("Error creating JWT key: {}", e.getMessage());
             return Keys.hmacShaKeyFor(jwtSecret.getBytes());
         }
     }
