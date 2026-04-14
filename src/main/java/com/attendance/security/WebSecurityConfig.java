@@ -1,5 +1,6 @@
 package com.attendance.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,9 +61,11 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/auth/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/api/test/**")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/error")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/index.html")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/auth.html")).permitAll()
