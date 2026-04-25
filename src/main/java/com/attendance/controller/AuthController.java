@@ -112,8 +112,6 @@ public class AuthController {
                 .role(role)
                 .build();
 
-        userRepository.save(user);
-
         if (role == Role.TEACHER) {
             // Verify Access Key
             if (signUpRequest.getAccessKey() == null || signUpRequest.getAccessKey().trim().isEmpty()) {
@@ -122,6 +120,8 @@ public class AuthController {
             
             String normalizedKey = signUpRequest.getAccessKey().trim().toUpperCase();
             
+            userRepository.save(user);
+
             Teacher teacher = Teacher.builder()
                     .user(user)
                     .accessKey(normalizedKey)
@@ -150,6 +150,8 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid Teacher Access Key! Requests are case-sensitive but match after trimming."));
             }
             
+            userRepository.save(user);
+
             Student student = Student.builder()
                     .user(user)
                     .vtuNo(signUpRequest.getVtuNo().trim())
@@ -159,6 +161,8 @@ public class AuthController {
                     .isApproved(false) // Wait for teacher approval
                     .build();
             studentRepository.save(student);
+        } else {
+             userRepository.save(user);
         }
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));

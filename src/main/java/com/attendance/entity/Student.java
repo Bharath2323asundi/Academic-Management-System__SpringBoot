@@ -30,6 +30,8 @@ public class Student {
     @Column(name = "is_approved", nullable = false)
     private boolean isApproved = false;
 
-    @Column(name = "teacher_access_key", nullable = false)
+    // nullable=true to allow Hibernate to add this column to existing DB tables on PostgreSQL
+    // The controller still validates this field is always present for new registrations
+    @Column(name = "teacher_access_key", nullable = true)
     private String teacherAccessKey;
 }

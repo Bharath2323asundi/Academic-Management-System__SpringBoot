@@ -7,6 +7,9 @@ import com.attendance.entity.Teacher;
 import com.attendance.repository.AttendanceRepository;
 import com.attendance.repository.TeacherRepository;
 import com.attendance.repository.UserRepository;
+import com.attendance.repository.SessionRepository;
+import com.attendance.entity.Session;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +35,9 @@ public class AdminController {
     @Autowired
     AttendanceRepository attendanceRepository;
 
+    @Autowired
+    SessionRepository sessionRepository;
+
     @GetMapping("/teachers")
     public List<Teacher> getAllTeachers() {
         return teacherRepository.findAll();
@@ -46,14 +52,19 @@ public class AdminController {
         return ResponseEntity.ok(new MessageResponse("Teacher status updated to: " + (teacher.isActive() ? "Active" : "Inactive")));
     }
 
+    @Transactional
     @DeleteMapping("/teachers/{id}")
     public ResponseEntity<?> deleteTeacher(@PathVariable Long id) {
         Teacher teacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Error: Teacher not found."));
         
-        // Associated user and records will be deleted if cascading is set up, 
-        // otherwise we might need manual cleanup. 
-        // Let's assume standard JPA delete for now.
+        List<Session> sessions = sessionRepository.findByTeacherOrderByStartTimeDesc(teacher);
+        for (Session session : sessions) {
+            List<Attendance> attendances = attendanceRepository.findBySession(session);
+            attendanceRepository.deleteAll(attendances);
+        }
+        sessionRepository.deleteAll(sessions);
+
         teacherRepository.delete(teacher);
         userRepository.delete(teacher.getUser());
         

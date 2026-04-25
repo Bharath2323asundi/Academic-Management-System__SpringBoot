@@ -35,8 +35,10 @@ public class StudentController {
 
     private Student getCurrentStudent() {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email).get();
-        return studentRepository.findByUser(user).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Error: Current user not found."));
+        return studentRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Error: Student profile not found."));
     }
 
     @PostMapping("/mark-attendance")

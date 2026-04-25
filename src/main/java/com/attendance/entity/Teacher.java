@@ -18,7 +18,9 @@ public class Teacher {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "access_key", nullable = false)
+    // nullable=true to allow Hibernate to add this column to existing DB tables on PostgreSQL
+    // Business logic in AuthController ensures all new teachers always provide an access key
+    @Column(name = "access_key", nullable = true)
     private String accessKey;
 
     @Column(nullable = false)
