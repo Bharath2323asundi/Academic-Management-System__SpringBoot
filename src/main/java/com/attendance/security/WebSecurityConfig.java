@@ -77,6 +77,7 @@ public class WebSecurityConfig {
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/js/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/images/**")).permitAll()
                         .requestMatchers(AntPathRequestMatcher.antMatcher("/favicon.ico")).permitAll()
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/favicon.png")).permitAll()
                         .anyRequest().authenticated()
                 );
 
