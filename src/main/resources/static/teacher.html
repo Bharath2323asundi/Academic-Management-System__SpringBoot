@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard | Geo-Attendance</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" type="image/png" href="./favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <script src="js/app.js" defer></script>
 </head>
+
 <body>
     <div class="bg-blobs">
         <div class="blob blob-2"></div>
@@ -17,7 +19,7 @@
     <div class="container">
         <nav class="navbar">
             <div class="logo">
-                <span class="gradient-text">Teacher Portal</span>
+                <span class="gradient-text">VTU_Teacher Portal</span>
             </div>
             <button class="hamburger">
                 <span></span>
@@ -25,9 +27,13 @@
                 <span></span>
             </button>
             <div class="nav-menu">
-                <div id="access-key-badge" style="background: rgba(99, 102, 241, 0.1); border: 1px dashed var(--primary); padding: 0.3rem 0.6rem; border-radius: 6px; display: none; text-align: left;">
-                    <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; display: block; line-height: 1;">Access Key</span>
-                    <span id="nav-access-key" style="color: var(--primary); font-family: monospace; font-weight: bold; font-size: 0.9rem;">----</span>
+                <div id="access-key-badge"
+                    style="background: rgba(99, 102, 241, 0.1); border: 1px dashed var(--primary); padding: 0.3rem 0.6rem; border-radius: 6px; display: none; text-align: left;">
+                    <span
+                        style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; display: block; line-height: 1;">Access
+                        Key</span>
+                    <span id="nav-access-key"
+                        style="color: var(--primary); font-family: monospace; font-weight: bold; font-size: 0.9rem;">----</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;">
                     <span id="nav-username" style="color: var(--text-muted); font-size: 0.9rem;">Teacher Name</span>
@@ -41,14 +47,17 @@
             <div class="glass-card">
                 <h2>Attendance Session</h2>
                 <div id="session-inactive">
-                    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Start a new session to allow students to mark attendance.</p>
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Start a new session to allow students to
+                        mark attendance.</p>
                     <div class="input-group">
                         <label>Subject / Class Name</label>
-                        <input type="text" id="session-subject" placeholder="e.g. Mathematics - CS101" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%; margin-bottom: 1rem;">
+                        <input type="text" id="session-subject" placeholder="e.g. Mathematics - CS101"
+                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%; margin-bottom: 1rem;">
                     </div>
                     <div class="input-group">
                         <label>Session Duration</label>
-                        <select id="session-duration" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%; margin-bottom: 1rem;">
+                        <select id="session-duration"
+                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%; margin-bottom: 1rem;">
                             <option value="5">5 Minutes</option>
                             <option value="10" selected>10 Minutes</option>
                             <option value="15">15 Minutes</option>
@@ -59,23 +68,34 @@
                 </div>
 
                 <div id="session-active" style="display: none; text-align: center;">
-                    <h3 id="active-subject" class="gradient-text" style="font-size: 1.5rem; margin-bottom: 1rem;">Subject</h3>
-                    <div id="qr-container" style="background: white; padding: 1rem; border-radius: 12px; display: inline-block; margin-bottom: 1rem;">
+                    <h3 id="active-subject" class="gradient-text" style="font-size: 1.5rem; margin-bottom: 1rem;">
+                        Subject</h3>
+                    <div id="qr-container"
+                        style="background: white; padding: 1rem; border-radius: 12px; display: inline-block; margin-bottom: 1rem;">
                         <img id="qr-image" src="" alt="QR Code" style="max-width: 250px;">
                     </div>
                     <div style="margin-bottom: 1rem;">
                         <span style="color: var(--text-muted); font-size: 0.8rem;">Manual Entry Token:</span>
-                        <h4 id="display-token" style="color: var(--primary); font-family: monospace; letter-spacing: 2px; margin-top: 0.2rem;">----</h4>
+                        <h4 id="display-token"
+                            style="color: var(--primary); font-family: monospace; letter-spacing: 2px; margin-top: 0.2rem;">
+                            ----</h4>
                     </div>
-                    <p id="countdown" style="color: var(--secondary); font-weight: 600; margin-bottom: 1rem;">Expires in --:--</p>
-                    <div style="background: rgba(16,185,129,0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
-                        <span style="display: block; font-size: 0.8rem; color: var(--accent); text-transform: uppercase;">Students Present</span>
+                    <p id="countdown" style="color: var(--secondary); font-weight: 600; margin-bottom: 1rem;">Expires in
+                        --:--</p>
+                    <div
+                        style="background: rgba(16,185,129,0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                        <span
+                            style="display: block; font-size: 0.8rem; color: var(--accent); text-transform: uppercase;">Students
+                            Present</span>
                         <h2 id="live-count" style="font-size: 3rem; color: var(--accent);">0</h2>
                     </div>
 
                     <div id="live-presence-container" style="margin-top: 1.5rem; text-align: left;">
-                        <span style="display: block; font-size: 0.8rem; color: var(--accent); text-transform: uppercase; margin-bottom: 0.5rem;">Live Presence List</span>
-                        <div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.5rem;">
+                        <span
+                            style="display: block; font-size: 0.8rem; color: var(--accent); text-transform: uppercase; margin-bottom: 0.5rem;">Live
+                            Presence List</span>
+                        <div
+                            style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.5rem;">
                             <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
                                 <tbody id="live-presence-list">
                                     <!-- Live list here -->
@@ -84,14 +104,17 @@
                         </div>
                     </div>
 
-                    <button id="btn-end" class="btn btn-secondary" style="width: 100%; border-color: var(--secondary); color: var(--secondary); margin-top: 1rem;">End Session Manually</button>
+                    <button id="btn-end" class="btn btn-secondary"
+                        style="width: 100%; border-color: var(--secondary); color: var(--secondary); margin-top: 1rem;">End
+                        Session Manually</button>
                 </div>
             </div>
 
             <!-- My Students -->
             <div class="glass-card">
                 <h2>My Students</h2>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">List of all students linked to your access key.</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">List of all students
+                    linked to your access key.</p>
                 <div id="approved-list" style="max-height: 400px; overflow-y: auto;">
                     <!-- List items here -->
                 </div>
@@ -100,22 +123,27 @@
             <!-- Student Approvals -->
             <div class="glass-card">
                 <h2>Pending Approvals</h2>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Review student registration requests.</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Review student
+                    registration requests.</p>
                 <div id="pending-list" style="max-height: 200px; overflow-y: auto;">
                     <!-- List items here -->
                 </div>
-                <button id="btn-approve-all" class="btn btn-primary" style="width: 100%; margin-top: 1rem; background: var(--accent);">Approve All Pending</button>
+                <button id="btn-approve-all" class="btn btn-primary"
+                    style="width: 100%; margin-top: 1rem; background: var(--accent);">Approve All Pending</button>
 
                 <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                     <h3>Daily Report</h3>
-                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Download all session records for a specific date.</p>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Download all session
+                        records for a specific date.</p>
                     <div class="input-group">
                         <label>Select Date</label>
-                        <input type="date" id="report-date" style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%;">
+                        <input type="date" id="report-date"
+                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 8px; width: 100%;">
                     </div>
                     <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                         <button id="btn-daily-report" class="btn btn-primary" style="flex: 1;">PDF</button>
-                        <button id="btn-daily-report-csv" class="btn btn-secondary" style="flex: 1;">Excel (CSV)</button>
+                        <button id="btn-daily-report-csv" class="btn btn-secondary" style="flex: 1;">Excel
+                            (CSV)</button>
                     </div>
                 </div>
             </div>
@@ -155,7 +183,7 @@
             }
             loadPendingStudents();
             // loadHistory(); // Implement if needed
-            
+
             document.getElementById('btn-start').onclick = startSession;
             document.getElementById('btn-end').onclick = endSession;
             document.getElementById('btn-daily-report').onclick = downloadDailyReport;
@@ -199,7 +227,7 @@
                     `;
                     list.appendChild(div);
                 });
-            } catch (err) {}
+            } catch (err) { }
         }
 
         async function loadHistory() {
@@ -223,7 +251,7 @@
                     `;
                     historyTable.appendChild(tr);
                 });
-            } catch (err) {}
+            } catch (err) { }
         }
 
         async function downloadSessionReport(id, isCsv = false) {
@@ -243,7 +271,7 @@
         async function downloadDailyReport(isCsv = false) {
             const date = document.getElementById('report-date').value;
             if (!date) return app.showToast('Please select a date', 'danger');
-            
+
             try {
                 const urlPath = isCsv ? `/teacher/report/date/csv/${date}` : `/teacher/report/date/${date}`;
                 const blob = await app.request(urlPath);
@@ -286,7 +314,7 @@
                     `;
                     list.appendChild(div);
                 });
-            } catch (err) {}
+            } catch (err) { }
         }
 
         async function approve(id) {
@@ -309,7 +337,7 @@
                 await app.request(`/teacher/students/${id}`, { method: 'DELETE' });
                 app.showToast('Student Removed');
                 loadApprovedStudents();
-            } catch (err) {}
+            } catch (err) { }
         }
 
         async function approveAll() {
@@ -319,13 +347,13 @@
                 app.showToast('All Students Approved');
                 loadPendingStudents();
                 loadApprovedStudents();
-            } catch (err) {}
+            } catch (err) { }
         }
 
         async function startSession() {
             const subjectEl = document.getElementById('session-subject');
             const durationEl = document.getElementById('session-duration');
-            
+
             if (!subjectEl || !durationEl) {
                 console.error('Critical elements missing: subject or duration');
                 return app.showToast('UI Error: Missing input fields', 'danger');
@@ -348,12 +376,12 @@
                     document.getElementById('qr-image').src = `data:image/png;base64,${res.qrCode}`;
                     document.getElementById('display-token').innerText = res.qrToken || '----';
                     document.getElementById('active-subject').innerText = subject;
-                    
+
                     document.getElementById('session-inactive').style.display = 'none';
                     document.getElementById('session-active').style.display = 'block';
 
                     app.showToast('Session Started Successfully');
-                    
+
                     // Start timer and polling
                     startTimer(durationMinutes);
                     statsInterval = setInterval(updateLiveCount, 3000);
@@ -369,14 +397,14 @@
         function startTimer(minutes) {
             let seconds = minutes * 60;
             const countdownEl = document.getElementById('countdown');
-            
+
             if (timerInterval) clearInterval(timerInterval);
-            
+
             timerInterval = setInterval(() => {
                 const m = Math.floor(seconds / 60);
                 const s = seconds % 60;
                 countdownEl.innerText = `Expires in ${m}:${s < 10 ? '0' : ''}${s}`;
-                
+
                 if (seconds <= 0) {
                     clearInterval(timerInterval);
                     countdownEl.innerText = 'Session Expired (QR Invalid)';
@@ -391,7 +419,7 @@
             try {
                 const attList = await app.request(`/teacher/session/${currentSessionId}/attendance`);
                 document.getElementById('live-count').innerText = attList.length;
-                
+
                 const liveList = document.getElementById('live-presence-list');
                 liveList.innerHTML = '';
                 attList.forEach(att => {
@@ -402,7 +430,7 @@
                     `;
                     liveList.appendChild(tr);
                 });
-            } catch (err) {}
+            } catch (err) { }
         }
 
         async function endSession() {
@@ -415,10 +443,11 @@
                 document.getElementById('session-active').style.display = 'none';
                 app.showToast('Session Ended');
                 currentSessionId = null;
-            } catch (err) {}
+            } catch (err) { }
         }
 
         // Add dummy logic for PDF download in table if needed
     </script>
 </body>
+
 </html>

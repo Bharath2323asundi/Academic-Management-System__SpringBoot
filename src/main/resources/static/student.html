@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard | Geo-Attendance</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" type="image/png" href="./favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <script src="js/html5-qrcode.min.js"></script>
     <script src="js/app.js" defer></script>
 </head>
+
 <body>
     <div class="bg-blobs">
         <div class="blob blob-1"></div>
@@ -18,7 +20,7 @@
     <div class="container">
         <nav class="navbar">
             <div class="logo">
-                <span class="gradient-text">Student Portal</span>
+                <span class="gradient-text">VTU_Student Portal</span>
             </div>
             <button class="hamburger">
                 <span></span>
@@ -32,9 +34,10 @@
                 </div>
             </div>
         </nav>
-        
+
         <!-- Attendance Stats Dashboard -->
-        <div id="stats-dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div id="stats-dashboard"
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
             <!-- Stats cards here -->
         </div>
 
@@ -43,15 +46,21 @@
             <div class="glass-card" style="text-align: center;">
                 <h2>Mark Attendance</h2>
                 <div style="margin: 2rem 0;">
-                    <button id="btn-scan" class="btn btn-secondary" style="width: 100%; margin-bottom: 1rem; border-color: var(--primary);">
+                    <button id="btn-scan" class="btn btn-secondary"
+                        style="width: 100%; margin-bottom: 1rem; border-color: var(--primary);">
                         <span id="scan-btn-text">📷 Start Camera Scanner</span>
                     </button>
-                    
-                    <div id="reader" style="width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 2rem; border: 1px solid var(--glass-border); display: none;"></div>
 
-                    <div id="scan-placeholder" style="padding: 2rem; border: 2px dashed var(--glass-border); border-radius: 24px; margin-bottom: 1.5rem;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ScanMe" alt="Scan Icon" style="opacity: 0.3; filter: grayscale(1); width: 100px;">
-                        <p style="color: var(--text-muted); margin-top: 1rem;">Connect to Teacher's Hotspot and scan the QR displayed on the screen.</p>
+                    <div id="reader"
+                        style="width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 2rem; border: 1px solid var(--glass-border); display: none;">
+                    </div>
+
+                    <div id="scan-placeholder"
+                        style="padding: 2rem; border: 2px dashed var(--glass-border); border-radius: 24px; margin-bottom: 1.5rem;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ScanMe" alt="Scan Icon"
+                            style="opacity: 0.3; filter: grayscale(1); width: 100px;">
+                        <p style="color: var(--text-muted); margin-top: 1rem;">Connect to Teacher's Hotspot and scan the
+                            QR displayed on the screen.</p>
                     </div>
 
                     <div class="input-group">
@@ -64,7 +73,7 @@
                         <div class="loader" id="mark-loader"></div>
                     </button>
                 </div>
-                
+
                 <div id="status-display" style="padding: 1rem; border-radius: 12px; display: none;">
                     <!-- Success/Error message -->
                 </div>
@@ -73,8 +82,9 @@
             <!-- Student Info & History -->
             <div class="glass-card">
                 <h2>My History</h2>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">View your marked attendance records.</p>
-                
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">View your marked
+                    attendance records.</p>
+
                 <div id="history-list" style="max-height: 400px; overflow-y: auto;">
                     <!-- List items loaded here -->
                 </div>
@@ -112,17 +122,17 @@
                 readerDiv.style.display = 'block';
                 placeholder.style.display = 'none';
                 btnText.innerText = "🛑 Stop Camera";
-                
+
                 try {
                     await html5QrCode.start(
-                        { facingMode: "environment" }, 
+                        { facingMode: "environment" },
                         { fps: 10, qrbox: { width: 250, height: 250 } },
                         (decodedText) => {
                             document.getElementById('qr-token-input').value = decodedText;
                             app.showToast('QR Scanned! Tap Submit.');
                             toggleScanner(); // Stop scanning after success
                         },
-                        (errorMessage) => {}
+                        (errorMessage) => { }
                     );
                 } catch (err) {
                     app.showToast('Camera Permission Denied or Not Found', 'danger');
@@ -147,7 +157,7 @@
 
             const loader = document.getElementById('mark-loader');
             const statusBox = document.getElementById('status-display');
-            
+
             loader.style.display = 'inline-block';
             statusBox.style.display = 'none';
 
@@ -161,7 +171,7 @@
                 statusBox.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
                 statusBox.style.color = 'var(--accent)';
                 statusBox.innerText = res.message;
-                
+
                 app.showToast('Attendance Marked! ✅');
                 loadHistory();
                 loadStats();
@@ -201,7 +211,7 @@
                     `;
                     list.appendChild(div);
                 });
-            } catch (err) {}
+            } catch (err) { }
         }
 
         async function loadStats() {
@@ -226,8 +236,9 @@
                     `;
                     dashboard.appendChild(card);
                 });
-            } catch (err) {}
+            } catch (err) { }
         }
     </script>
 </body>
+
 </html>
